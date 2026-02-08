@@ -150,6 +150,8 @@ local function Ripper()
                         game.TweenService:Create(img, TweenInfo.new(1), {ImageTransparency = 1}):Play()
                         static:Destroy()
                         char:FindFirstChild("HumanoidRootPart").Anchored = false
+                        game.ReplicatedStorage.GameStats["Player_" .. v.Character.Name].Total.DeathCause.Value = "Ripper"
+                        game.ReplicatedStorage.GameStats["Player_" .. v.Character.Name]["1"].DeathCause.Value = "Ripper"
                         char:FindFirstChildWhichIsA("Humanoid"):TakeDamage(100)
                     end)()
                 end
