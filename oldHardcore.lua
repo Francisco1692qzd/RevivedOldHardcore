@@ -81,6 +81,8 @@ game.ReplicatedStorage.GameData.LatestRoom.Changed:Connect(function()
         ShowCaption("Old Hardcore Initiated.", 5)
         task.wait(3)
         ShowCaption("Idc or whatever, have fun " .. game.Players.LocalPlayer.Name .. ".", 4)
+        task.wait(5)
+        ShowCaption("If you got your stamina broken when not crouching, just enter a closet while crouched.", 6)
 
         -- [CRONOGRAMA DE ENTIDADES]
         
