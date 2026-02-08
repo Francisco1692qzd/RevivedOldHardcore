@@ -1,6 +1,7 @@
 -- welcome to old hardcore.
 repeat task.wait() until game:IsLoaded()
 
+-- [TRAVA DE EXECUÇÃO ÚNICA]
 if not workspace:FindFirstChild("ExecutedOldHard") then
     local modeInit = Instance.new("BoolValue")
     modeInit.Name = "ExecutedOldHard"
@@ -15,6 +16,24 @@ local entityURLs = {
     Cease = "https://raw.githubusercontent.com/Francisco1692qzd/RevivedOldHardcore/refs/heads/main/oldCease.lua",
     Shocker = "https://raw.githubusercontent.com/Francisco1692qzd/RevivedOldHardcore/refs/heads/main/oldShocker.lua"
 }
+
+-- [SISTEMA DE SINCRONIA GLOBAL]
+local startTimeValue = workspace:FindFirstChild("OldHardcoreStartTime")
+if not startTimeValue then
+    startTimeValue = Instance.new("NumberValue")
+    startTimeValue.Name = "OldHardcoreStartTime"
+    startTimeValue.Value = 0 
+    startTimeValue.Parent = workspace
+end
+
+-- Função que espera baseada no relógio do servidor
+local function SyncWait(seconds)
+    if startTimeValue.Value == 0 then return end
+    local targetTime = startTimeValue.Value + seconds
+    while workspace:GetServerTimeNow() < targetTime do
+        task.wait(0.5) -- Checagem leve para não pesar
+    end
+end
 
 -- [SISTEMA DE LEGENDAS]
 local function ShowCaption(text, duration)
@@ -56,7 +75,6 @@ end
 
 -- [FUNÇÃO DE CARREGAMENTO COM ANTI-SEEK]
 local function LoadEntity(name)
-    -- Verifica se o Seek está no mapa antes de spawnar
     if workspace:FindFirstChild("SeekMoving") then
         print("XENO: " .. name .. " spawn cancelado (Seek ativo).")
         return
@@ -74,57 +92,70 @@ end
 local openedthefirstdoor = false
 
 game.ReplicatedStorage.GameData.LatestRoom.Changed:Connect(function()
-    if not openedthefirstdoor then
+    if not openedthefirstdoor and game.ReplicatedStorage.GameData.LatestRoom.Value == 1 then
         openedthefirstdoor = true
         
-        -- Boas-vindas
+        -- Sincroniza o tempo de início para todos no servidor
+        if startTimeValue.Value == 0 then
+            startTimeValue.Value = workspace:GetServerTimeNow()
+        end
+        
         ShowCaption("Old Hardcore Initiated.", 5)
         task.wait(3)
         ShowCaption("Idc or whatever, have fun " .. game.Players.LocalPlayer.Name .. ".", 4)
         task.wait(5)
         ShowCaption("If you got your stamina broken when not crouching, just enter a closet while crouched.", 6)
 
-        -- [CRONOGRAMA DE ENTIDADES]
+        -- [CRONOGRAMA DE ENTIDADES SINCRONIZADO]
         
         -- 1. RIPPER: Loop Infinito
         task.spawn(function()
+            local cycle = 0
             while true do
-                task.wait(120)
+                SyncWait(cycle + 120)
                 game.ReplicatedStorage.GameData.LatestRoom.Changed:Wait()
                 LoadEntity("Ripper")
-                task.wait(240)
+                
+                SyncWait(cycle + 360) -- 120 + 240
                 game.ReplicatedStorage.GameData.LatestRoom.Changed:Wait()
                 LoadEntity("Ripper")
+                
+                cycle = cycle + 360
             end
         end)
 
         -- 2. REBOUND: 2 Vezes
         task.spawn(function()
-            task.wait(320)
+            SyncWait(320)
             game.ReplicatedStorage.GameData.LatestRoom.Changed:Wait()
             LoadEntity("Rebound")
-            task.wait(450)
+            
+            SyncWait(770) -- 320 + 450
             game.ReplicatedStorage.GameData.LatestRoom.Changed:Wait()
             LoadEntity("Rebound")
         end)
 
         -- 3. DEER GOD: 1 Vez
         task.spawn(function()
-            task.wait(420)
+            SyncWait(420)
             LoadEntity("DeerGod")
         end)
 
         -- 4. CEASE: Loop Infinito
         task.spawn(function()
+            local cycle = 0
             while true do
-                task.wait(160)
+                SyncWait(cycle + 160)
                 LoadEntity("Cease")
-                task.wait(230)
+                
+                SyncWait(cycle + 390) -- 160 + 230
                 LoadEntity("Cease")
+                
+                cycle = cycle + 390
             end
         end)
 
-        -- 5. SHOCKER: Aleatório e Individual (30-70s)
+        -- 5. SHOCKER: Aleatório (Mantido individual por design)
         task.spawn(function()
             while true do
                 task.wait(math.random(30, 70))
