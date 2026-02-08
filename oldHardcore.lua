@@ -26,12 +26,11 @@ if not startTimeValue then
     startTimeValue.Parent = workspace
 end
 
--- Função que espera baseada no relógio do servidor
 local function SyncWait(seconds)
     if startTimeValue.Value == 0 then return end
     local targetTime = startTimeValue.Value + seconds
     while workspace:GetServerTimeNow() < targetTime do
-        task.wait(0.5) -- Checagem leve para não pesar
+        task.wait(0.5)
     end
 end
 
@@ -73,7 +72,7 @@ local function ShowCaption(text, duration)
     end)
 end
 
--- [FUNÇÃO DE CARREGAMENTO COM ANTI-SEEK]
+-- [FUNÇÃO DE CARREGAMENTO]
 local function LoadEntity(name)
     if workspace:FindFirstChild("SeekMoving") then
         print("XENO: " .. name .. " spawn cancelado (Seek ativo).")
@@ -95,7 +94,6 @@ game.ReplicatedStorage.GameData.LatestRoom.Changed:Connect(function()
     if not openedthefirstdoor and game.ReplicatedStorage.GameData.LatestRoom.Value == 1 then
         openedthefirstdoor = true
         
-        -- Sincroniza o tempo de início para todos no servidor
         if startTimeValue.Value == 0 then
             startTimeValue.Value = workspace:GetServerTimeNow()
         end
@@ -108,34 +106,34 @@ game.ReplicatedStorage.GameData.LatestRoom.Changed:Connect(function()
 
         -- [CRONOGRAMA DE ENTIDADES SINCRONIZADO]
         
-        -- 1. RIPPER: Loop Infinito
+        -- 1. RIPPER: Loop 122s e 200s
         task.spawn(function()
             local cycle = 0
             while true do
-                SyncWait(cycle + 120)
+                SyncWait(cycle + 122)
                 game.ReplicatedStorage.GameData.LatestRoom.Changed:Wait()
                 LoadEntity("Ripper")
                 
-                SyncWait(cycle + 360) -- 120 + 240
+                SyncWait(cycle + 200)
                 game.ReplicatedStorage.GameData.LatestRoom.Changed:Wait()
                 LoadEntity("Ripper")
                 
-                cycle = cycle + 360
+                cycle = cycle + 300 -- Reinicia o ciclo a cada 5 minutos ou ajuste conforme preferir
             end
         end)
 
-        -- 2. REBOUND: 2 Vezes
+        -- 2. REBOUND: 290s e 340s
         task.spawn(function()
-            SyncWait(320)
+            SyncWait(290)
             game.ReplicatedStorage.GameData.LatestRoom.Changed:Wait()
             LoadEntity("Rebound")
             
-            SyncWait(770) -- 320 + 450
+            SyncWait(340)
             game.ReplicatedStorage.GameData.LatestRoom.Changed:Wait()
             LoadEntity("Rebound")
         end)
 
-        -- 3. DEER GOD: 1 Vez
+        -- 3. DEER GOD: Mantido em 420s
         task.spawn(function()
             SyncWait(420)
             LoadEntity("DeerGod")
@@ -147,15 +145,13 @@ game.ReplicatedStorage.GameData.LatestRoom.Changed:Connect(function()
             while true do
                 SyncWait(cycle + 160)
                 LoadEntity("Cease")
-                
-                SyncWait(cycle + 390) -- 160 + 230
+                SyncWait(cycle + 390)
                 LoadEntity("Cease")
-                
                 cycle = cycle + 390
             end
         end)
 
-        -- 5. SHOCKER: Aleatório (Mantido individual por design)
+        -- 5. SHOCKER: Aleatório
         task.spawn(function()
             while true do
                 task.wait(math.random(30, 70))
