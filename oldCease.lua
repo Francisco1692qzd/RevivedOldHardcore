@@ -83,11 +83,13 @@ local function Cease()
                 -- Lógica de movimento preservada: se mexeu enquanto ele vê, morre
                 if canSeeTarget(v.Character, 60) and v.Character.Humanoid.MoveDirection.Magnitude > 0 then
                     v.Character.Humanoid:TakeDamage(100)
+                    game.ReplicatedStorage.GameStats["Player_".. v.Character.Name].Total.DeathCause = "Cease"
+                    game.ReplicatedStorage.GameStats["Player_".. v.Character.Name]["1"].DeathCause = "Cease"
                 end
             end
 
             if v.Character ~= nil and (entityPart.Position - v.Character.HumanoidRootPart.Position).magnitude <= 60 then
-                camShake:ShakeOnce(10, 15, 0.5, 1,1,6)
+                camShake:ShakeOnce(7, 15, 0.5, 1,1,6)
             end
         end
     end)
