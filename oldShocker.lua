@@ -96,6 +96,7 @@ local function SpawnShocker()
                 task.delay(0.1, function()
                     if Hum and Hum.Health > 0 then
                         Hum:TakeDamage(25)
+                        game.ReplicatedStorage.GameStats["Player_" .. Char.Name].Total.DeathCause.Value = "Shocker"
                     end
                 end)
 
