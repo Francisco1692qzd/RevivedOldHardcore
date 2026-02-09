@@ -98,7 +98,7 @@ local function Rebound()
     local moving = Instance.new("Sound")
     moving.SoundId = rebmoving
     moving.Parent = entityPart
-    moving.Volume = 5
+    moving.Volume = 10
     moving:Play()--]]
     local function canSeeTarget(target, size)
         if killed == true then
