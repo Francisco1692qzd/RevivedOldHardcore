@@ -85,9 +85,9 @@ local function Cease()
                     v.Character.Humanoid:TakeDamage(100)
                     game.ReplicatedStorage.GameStats["Player_".. v.Character.Name].Total.DeathCause = "Cease"
                     game.ReplicatedStorage.GameStats["Player_".. v.Character.Name]["1"].DeathCause = "Cease"
-                    firesignal(game.ReplicatedStorage.Bricks.DeathHint.OnClientEvent:Fire({
-                        "Working haha",
-                        "ur ugly."
+                    firesignal(game.ReplicatedStorage.Bricks.DeathHint.OnClientEvent, {
+                        "Workin hahaahahahaahaaahahaa",
+                        "i love u."
                     })
                 end
             end
