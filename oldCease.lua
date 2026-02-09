@@ -45,8 +45,6 @@ local function Cease()
     if not entity then return end
 
     local entityPart = entity:FindFirstChildWhichIsA("BasePart")
-    wait(2)
-    
     local tweenLights = TweenInfo.new(1)
     local color = {Color = Color3.fromRGB(0, 0, 255)} -- Azul do Cease
     for i, v in pairs(currentRooms:GetDescendants()) do
@@ -57,6 +55,7 @@ local function Cease()
             end
         end
     end
+    wait(2)
 
     local function canSeeTarget(target, size)
         if killed == true then return end
@@ -83,8 +82,7 @@ local function Cease()
                 -- Lógica de movimento preservada: se mexeu enquanto ele vê, morre
                 if canSeeTarget(v.Character, 60) and v.Character.Humanoid.MoveDirection.Magnitude > 0 then
                     v.Character.Humanoid:TakeDamage(100)
-                    game.ReplicatedStorage.GameStats["Player_".. v.Character.Name].Total.DeathCause = "Cease"
-                    game.ReplicatedStorage.GameStats["Player_".. v.Character.Name]["1"].DeathCause = "Cease"
+                    game.ReplicatedStorage.GameStats["Player_".. v.Character.Name].Total.DeathCause.Value = "Cease"
                     firesignal(game.ReplicatedStorage.Bricks.DeathHint.OnClientEvent, {"You died to who you call Shocker..","Dont look at it or it stuns you!"})
                 end
             end
