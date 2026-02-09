@@ -35,7 +35,7 @@ local function SyncWait(seconds)
     end
 end
 
--- [SISTEMA DE STAMINA, MOVIMENTAÇÃO E MOBILE]
+-- [SISTEMA DE STAMINA E MOBILE]
 local UIS = game:GetService("UserInputService")
 local TS = game:GetService("TweenService")
 local Player = game.Players.LocalPlayer
@@ -60,9 +60,9 @@ bar.Size = UDim2.new(1, 0, 1, 0)
 bar.BackgroundColor3 = Color3.fromRGB(255, 222, 189)
 bar.BorderSizePixel = 0
 
--- Botão Mobile para Sprint
+local mobileBtn
 if UIS.TouchEnabled then
-    local mobileBtn = Instance.new("ImageButton", sg)
+    mobileBtn = Instance.new("ImageButton", sg)
     mobileBtn.Name = "SprintBtn"
     mobileBtn.Size = UDim2.new(0, 80, 0, 80)
     mobileBtn.Position = UDim2.new(0.85, 0, 0.80, 0)
@@ -87,13 +87,7 @@ end
 Player.CharacterAdded:Connect(SetupCharacter)
 if Player.Character then SetupCharacter(Player.Character) end
 
-UIS.InputBegan:Connect(function(i, gpe)
-    if gpe then return end
-    if i.KeyCode == Enum.KeyCode.Q then sprinting = true 
-    elseif i.KeyCode == Enum.KeyCode.C or i.KeyCode == Enum.KeyCode.LeftControl then crouching = not crouching end
-end)
-UIS.InputEnded:Connect(function(i) if i.KeyCode == Enum.KeyCode.Q then sprinting = false end end)
-
+-- [MOVIMENTAÇÃO LOGIC]
 task.spawn(function()
     while task.wait(0.05) do
         local char = Player.Character
@@ -114,10 +108,12 @@ task.spawn(function()
                 sprinting = false
                 stamina = math.min(100, stamina + 0.4)
                 bar.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+                if mobileBtn then mobileBtn.ImageColor3 = Color3.fromRGB(200, 50, 50) end
                 if not breathSound.IsPlaying then breathSound:Play() end
                 if stamina >= 100 then
                     isExhausted = false
                     bar.BackgroundColor3 = Color3.fromRGB(255, 222, 189)
+                    if mobileBtn then mobileBtn.ImageColor3 = Color3.new(1,1,1) end
                     if breathSound then breathSound:Stop() end
                 end
             elseif crouching then
@@ -133,10 +129,6 @@ task.spawn(function()
                 stamina = math.min(100, stamina + 0.5)
             end
             bar.Size = UDim2.new(stamina / 100, 0, 1, 0)
-            local targetAlpha = (stamina >= 100 and not isExhausted) and 1 or 0
-            container.BackgroundTransparency = targetAlpha + 0.4
-            bar.BackgroundTransparency = targetAlpha
-            stroke.Transparency = targetAlpha
         end
     end
 end)
@@ -190,7 +182,7 @@ game.ReplicatedStorage.GameData.LatestRoom.Changed:Connect(function()
         ShowCaption("Have fun " .. Player.Name .. ".", 4)
         task.wait(4)
         ShowCaption("Stamina fixed. Mobile button added.", 5)
-        wait(5)
+        task.wait(5)
         ShowCaption("If your standing up and can't crouch, enter a closet while crouched, then leave.", 6.7)
 
         -- RIPPER LOOP (300s cycle)
