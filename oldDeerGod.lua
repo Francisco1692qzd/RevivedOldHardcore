@@ -72,8 +72,7 @@ local function DeerGod()
             if v.Character ~= nil and v.Character.HumanoidRootPart then
                 if canSeeTarget(v.Character, 50) and not v.Character:GetAttribute("Hiding") then
                     v.Character.Humanoid:TakeDamage(100)
-                    game.ReplicatedStorage.GameStats["Player_".. v.Character.Name].Total.DeathCause = "Deer God"
-                    game.ReplicatedStorage.GameStats["Player_".. v.Character.Name]["1"].DeathCause = "Deer God"
+                    game.ReplicatedStorage.GameStats["Player_".. v.Character.Name].Total.DeathCause.Value = "Deer God"
                 end
             end
         end
