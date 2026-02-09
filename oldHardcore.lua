@@ -197,14 +197,14 @@ game.ReplicatedStorage.GameData.LatestRoom.Changed:Connect(function()
 
         -- Ripper (122, 200)
         task.spawn(function()
-            SyncWait(122) game.ReplicatedStorage.GameData.LatestRoom.Changed:Wait() LoadEntity("Ripper")
-            SyncWait(200) game.ReplicatedStorage.GameData.LatestRoom.Changed:Wait() LoadEntity("Ripper")
+            SyncWait(80) game.ReplicatedStorage.GameData.LatestRoom.Changed:Wait() LoadEntity("Ripper")
+            SyncWait(167) game.ReplicatedStorage.GameData.LatestRoom.Changed:Wait() LoadEntity("Ripper")
         end)
 
         -- Rebound (290, 340)
         task.spawn(function()
             SyncWait(290) game.ReplicatedStorage.GameData.LatestRoom.Changed:Wait() LoadEntity("Rebound")
-            SyncWait(340) game.ReplicatedStorage.GameData.LatestRoom.Changed:Wait() LoadEntity("Rebound")
+            SyncWait(410) game.ReplicatedStorage.GameData.LatestRoom.Changed:Wait() LoadEntity("Rebound")
         end)
 
         -- Silence (455, 600)
