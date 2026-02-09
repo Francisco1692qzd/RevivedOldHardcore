@@ -35,7 +35,7 @@ local function SyncWait(seconds)
     end
 end
 
--- [SISTEMA DE STAMINA E MOBILE]
+-- [SISTEMA DE STAMINA E INTERFACE]
 local UIS = game:GetService("UserInputService")
 local TS = game:GetService("TweenService")
 local Player = game.Players.LocalPlayer
@@ -60,6 +60,7 @@ bar.Size = UDim2.new(1, 0, 1, 0)
 bar.BackgroundColor3 = Color3.fromRGB(255, 222, 189)
 bar.BorderSizePixel = 0
 
+-- [BOTÃO MOBILE]
 local mobileBtn
 if UIS.TouchEnabled then
     mobileBtn = Instance.new("ImageButton", sg)
@@ -74,6 +75,22 @@ if UIS.TouchEnabled then
     mobileBtn.MouseButton1Down:Connect(function() sprinting = true end)
     mobileBtn.MouseButton1Up:Connect(function() sprinting = false end)
 end
+
+-- [CONTROLES PC - RESTAURADOS]
+UIS.InputBegan:Connect(function(i, gpe)
+    if gpe then return end
+    if i.KeyCode == Enum.KeyCode.Q then 
+        sprinting = true 
+    elseif i.KeyCode == Enum.KeyCode.C or i.KeyCode == Enum.KeyCode.LeftControl then 
+        crouching = not crouching 
+    end
+end)
+
+UIS.InputEnded:Connect(function(i)
+    if i.KeyCode == Enum.KeyCode.Q then 
+        sprinting = false 
+    end
+end)
 
 local breathSound
 local function SetupCharacter(char)
@@ -181,19 +198,19 @@ game.ReplicatedStorage.GameData.LatestRoom.Changed:Connect(function()
         task.wait(3)
         ShowCaption("Have fun " .. Player.Name .. ".", 4)
         task.wait(4)
-        ShowCaption("Stamina fixed. Mobile button added.", 5)
+        ShowCaption("Stamina and Mobile support ready.", 5)
         task.wait(5)
         ShowCaption("If you're standing up and can't sprint, enter a closet while crouched, then leave.", 6.7)
 
-        -- RIPPER LOOP (300s cycle)
+        -- RIPPER LOOP (300s)
         task.spawn(function() local c = 0 while true do SyncWait(c+80) game.ReplicatedStorage.GameData.LatestRoom.Changed:Wait() LoadEntity("Ripper"); SyncWait(c+167) game.ReplicatedStorage.GameData.LatestRoom.Changed:Wait() LoadEntity("Ripper"); c=c+300 end end)
-        -- REBOUND LOOP (450s cycle)
+        -- REBOUND LOOP (450s)
         task.spawn(function() local c = 0 while true do SyncWait(c+290) game.ReplicatedStorage.GameData.LatestRoom.Changed:Wait() LoadEntity("Rebound"); SyncWait(c+410) game.ReplicatedStorage.GameData.LatestRoom.Changed:Wait() LoadEntity("Rebound"); c=c+450 end end)
-        -- SILENCE LOOP (600s cycle)
+        -- SILENCE LOOP (600s)
         task.spawn(function() local c = 0 while true do SyncWait(c+455) LoadEntity("Silence"); SyncWait(c+600) LoadEntity("Silence"); c=c+600 end end)
-        -- CEASE LOOP (390s cycle)
+        -- CEASE LOOP (390s)
         task.spawn(function() local c = 0 while true do SyncWait(c+160) LoadEntity("Cease"); SyncWait(c+390) LoadEntity("Cease"); c=c+390 end end)
-        -- DEER GOD LOOP (500s cycle)
+        -- DEER GOD LOOP (500s)
         task.spawn(function() local c = 0 while true do SyncWait(c+420) LoadEntity("DeerGod"); c=c+500 end end)
         -- SHOCKER (RANDOM)
         task.spawn(function() while true do task.wait(math.random(30, 70)) LoadEntity("Shocker") end end)
