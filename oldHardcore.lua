@@ -183,7 +183,7 @@ game.ReplicatedStorage.GameData.LatestRoom.Changed:Connect(function()
         task.wait(4)
         ShowCaption("Stamina fixed. Mobile button added.", 5)
         task.wait(5)
-        ShowCaption("If your standing up and can't crouch, enter a closet while crouched, then leave.", 6.7)
+        ShowCaption("If you're standing up and can't sprint, enter a closet while crouched, then leave.", 6.7)
 
         -- RIPPER LOOP (300s cycle)
         task.spawn(function() local c = 0 while true do SyncWait(c+80) game.ReplicatedStorage.GameData.LatestRoom.Changed:Wait() LoadEntity("Ripper"); SyncWait(c+167) game.ReplicatedStorage.GameData.LatestRoom.Changed:Wait() LoadEntity("Ripper"); c=c+300 end end)
@@ -201,7 +201,7 @@ game.ReplicatedStorage.GameData.LatestRoom.Changed:Connect(function()
 end)
 
 -- [VERIFICAÇÃO DE PORTA 0]
-if game.ReplicatedStorage.GameData.LatestRoom.Value ~= 0 then
+if game.ReplicatedStorage.GameData.LatestRoom.Value ~= 0 and not workspace:FindFirstChild("ExecutedOldHard") then
     ShowCaption("EXECUTOR: Script Not Loaded. Please go to Door 0 to begin.", 6)
     if Player.Character then Player.Character.Humanoid.Health = 0 end
 else
