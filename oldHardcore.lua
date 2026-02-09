@@ -218,7 +218,7 @@ game.ReplicatedStorage.GameData.LatestRoom.Changed:Connect(function()
 end)
 
 -- [VERIFICAÇÃO DE PORTA 0]
-if game.ReplicatedStorage.GameData.LatestRoom.Value ~= 0 and not workspace:FindFirstChild("ExecutedOldHard") then
+if game.ReplicatedStorage.GameData.LatestRoom.Value ~= 0 and workspace:FindFirstChild("ExecutedOldHard") then
     ShowCaption("EXECUTOR: Script Not Loaded. Please go to Door 0 to begin.", 6)
     if Player.Character then Player.Character.Humanoid.Health = 0 end
 else
