@@ -35,20 +35,11 @@ local function SyncWait(seconds)
     end
 end
 
--- [SISTEMA DE STAMINA E MOVIMENTAÇÃO]
+-- [SISTEMA DE STAMINA, MOVIMENTAÇÃO E MOBILE]
 local UIS = game:GetService("UserInputService")
 local TS = game:GetService("TweenService")
 local Player = game.Players.LocalPlayer
-
-local stamina = 100
-local maxStamina = 100
-local isExhausted = false
-local sprinting = false
-local crouching = false
-
-local WALK_SPEED = 12
-local RUN_SPEED = 19
-local CROUCH_SPEED = 9
+local stamina, maxStamina, isExhausted, sprinting, crouching = 100, 100, false, false, false
 
 local sg = Instance.new("ScreenGui", Player.PlayerGui)
 sg.Name = "StaminaGui"
@@ -69,6 +60,21 @@ bar.Size = UDim2.new(1, 0, 1, 0)
 bar.BackgroundColor3 = Color3.fromRGB(255, 222, 189)
 bar.BorderSizePixel = 0
 
+-- Botão Mobile para Sprint
+if UIS.TouchEnabled then
+    local mobileBtn = Instance.new("ImageButton", sg)
+    mobileBtn.Name = "SprintBtn"
+    mobileBtn.Size = UDim2.new(0, 80, 0, 80)
+    mobileBtn.Position = UDim2.new(0.85, 0, 0.80, 0)
+    mobileBtn.BackgroundColor3 = Color3.new(0,0,0)
+    mobileBtn.BackgroundTransparency = 0.5
+    mobileBtn.Image = "rbxassetid://6031068833"
+    Instance.new("UICorner", mobileBtn).CornerRadius = UDim.new(1,0)
+    
+    mobileBtn.MouseButton1Down:Connect(function() sprinting = true end)
+    mobileBtn.MouseButton1Up:Connect(function() sprinting = false end)
+end
+
 local breathSound
 local function SetupCharacter(char)
     local head = char:WaitForChild("Head")
@@ -78,7 +84,6 @@ local function SetupCharacter(char)
     breathSound.Looped = true
     breathSound.Parent = head
 end
-
 Player.CharacterAdded:Connect(SetupCharacter)
 if Player.Character then SetupCharacter(Player.Character) end
 
@@ -87,10 +92,7 @@ UIS.InputBegan:Connect(function(i, gpe)
     if i.KeyCode == Enum.KeyCode.Q then sprinting = true 
     elseif i.KeyCode == Enum.KeyCode.C or i.KeyCode == Enum.KeyCode.LeftControl then crouching = not crouching end
 end)
-
-UIS.InputEnded:Connect(function(i)
-    if i.KeyCode == Enum.KeyCode.Q then sprinting = false end
-end)
+UIS.InputEnded:Connect(function(i) if i.KeyCode == Enum.KeyCode.Q then sprinting = false end end)
 
 task.spawn(function()
     while task.wait(0.05) do
@@ -102,36 +104,36 @@ task.spawn(function()
 
         if seekActive then
             container.Visible = false
-            stamina = maxStamina
+            stamina = 100
             isExhausted = false
             if breathSound then breathSound:Stop() end
         else
             container.Visible = true
             if isExhausted then
-                hum.WalkSpeed = WALK_SPEED
+                hum.WalkSpeed = 12
                 sprinting = false
-                stamina = math.min(maxStamina, stamina + 0.4)
+                stamina = math.min(100, stamina + 0.4)
                 bar.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
                 if not breathSound.IsPlaying then breathSound:Play() end
-                if stamina >= maxStamina then
+                if stamina >= 100 then
                     isExhausted = false
                     bar.BackgroundColor3 = Color3.fromRGB(255, 222, 189)
                     if breathSound then breathSound:Stop() end
                 end
             elseif crouching then
-                hum.WalkSpeed = CROUCH_SPEED
-                stamina = math.min(maxStamina, stamina + 0.8)
+                hum.WalkSpeed = 9
+                stamina = math.min(100, stamina + 0.8)
                 sprinting = false
             elseif sprinting and isMoving and stamina > 0 then
-                hum.WalkSpeed = RUN_SPEED
+                hum.WalkSpeed = 19
                 stamina = math.max(0, stamina - 1.2)
                 if stamina <= 0 then isExhausted = true end
             else
-                hum.WalkSpeed = WALK_SPEED
-                stamina = math.min(maxStamina, stamina + 0.5)
+                hum.WalkSpeed = 12
+                stamina = math.min(100, stamina + 0.5)
             end
-            bar.Size = UDim2.new(stamina / maxStamina, 0, 1, 0)
-            local targetAlpha = (stamina >= maxStamina and not isExhausted) and 1 or 0
+            bar.Size = UDim2.new(stamina / 100, 0, 1, 0)
+            local targetAlpha = (stamina >= 100 and not isExhausted) and 1 or 0
             container.BackgroundTransparency = targetAlpha + 0.4
             bar.BackgroundTransparency = targetAlpha
             stroke.Transparency = targetAlpha
@@ -141,14 +143,13 @@ end)
 
 -- [SISTEMA DE LEGENDAS]
 local function ShowCaption(text, duration)
-    local pGui = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+    local pGui = Player:WaitForChild("PlayerGui")
     if pGui:FindFirstChild("OldHardcoreCaption") then pGui.OldHardcoreCaption:Destroy() end
-    local screenGui = Instance.new("ScreenGui")
+    local screenGui = Instance.new("ScreenGui", pGui)
     screenGui.Name = "OldHardcoreCaption"
     screenGui.IgnoreGuiInset = true
     screenGui.DisplayOrder = 999
-    screenGui.Parent = pGui
-    local captionLabel = Instance.new("TextLabel")
+    local captionLabel = Instance.new("TextLabel", screenGui)
     captionLabel.Size = UDim2.new(0.6, 0, 0.05, 10)
     captionLabel.Position = UDim2.new(0.5, 0, 0.92, -60)
     captionLabel.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -158,17 +159,14 @@ local function ShowCaption(text, duration)
     captionLabel.TextSize = 30
     captionLabel.Font = Enum.Font.Oswald
     captionLabel.TextStrokeTransparency = 0
-    captionLabel.Parent = screenGui
-    local alertSound = Instance.new("Sound")
+    local alertSound = Instance.new("Sound", game.SoundService)
     alertSound.SoundId = "rbxassetid://3848738542"
-    alertSound.Parent = game.SoundService
     alertSound:Play()
     game.Debris:AddItem(alertSound, 2)
     task.delay(duration or 4, function()
         if captionLabel then
-            local tween = game:GetService("TweenService"):Create(captionLabel, TweenInfo.new(0.5), {TextTransparency = 1})
-            tween:Play()
-            tween.Completed:Connect(function() screenGui:Destroy() end)
+            TS:Create(captionLabel, TweenInfo.new(0.5), {TextTransparency = 1}):Play()
+            task.wait(0.5) screenGui:Destroy()
         end
     end)
 end
@@ -177,58 +175,36 @@ end
 local function LoadEntity(name)
     if workspace:FindFirstChild("SeekMoving") then return end
     local url = entityURLs[name]
-    if url then
-        task.spawn(function()
-            pcall(function() loadstring(game:HttpGet(url))() end)
-        end)
-    end
+    if url then task.spawn(function() pcall(function() loadstring(game:HttpGet(url))() end) end) end
 end
 
 -- [CONTROLE DE INÍCIO E CRONOGRAMA]
-local openedthefirstdoor = false
+local opened = false
 game.ReplicatedStorage.GameData.LatestRoom.Changed:Connect(function()
-    if not openedthefirstdoor and game.ReplicatedStorage.GameData.LatestRoom.Value == 1 then
-        openedthefirstdoor = true
+    if not opened and game.ReplicatedStorage.GameData.LatestRoom.Value == 1 then
+        opened = true
         if startTimeValue.Value == 0 then startTimeValue.Value = workspace:GetServerTimeNow() end
         
         ShowCaption("Old Hardcore Initiated.", 5)
         task.wait(3)
-        ShowCaption("Idc or whatever, have fun " .. game.Players.LocalPlayer.Name .. ".", 4)
+        ShowCaption("Have fun " .. Player.Name .. ".", 4)
+        task.wait(4)
+        ShowCaption("Stamina fixed. Mobile button added.", 5)
+        wait(5)
+        ShowCaption("If your standing up and can't crouch, enter a closet while crouched, then leave.", 6.7)
 
-        -- Ripper (122, 200)
-        task.spawn(function()
-            SyncWait(80) game.ReplicatedStorage.GameData.LatestRoom.Changed:Wait() LoadEntity("Ripper")
-            SyncWait(167) game.ReplicatedStorage.GameData.LatestRoom.Changed:Wait() LoadEntity("Ripper")
-        end)
-
-        -- Rebound (290, 340)
-        task.spawn(function()
-            SyncWait(290) game.ReplicatedStorage.GameData.LatestRoom.Changed:Wait() LoadEntity("Rebound")
-            SyncWait(410) game.ReplicatedStorage.GameData.LatestRoom.Changed:Wait() LoadEntity("Rebound")
-        end)
-
-        -- Silence (455, 600)
-        task.spawn(function()
-            SyncWait(455) LoadEntity("Silence")
-            SyncWait(600) LoadEntity("Silence")
-        end)
-
-        -- Deer God (420)
-        task.spawn(function() SyncWait(420) LoadEntity("DeerGod") end)
-
-        -- Cease (Loop)
-        task.spawn(function()
-            local c = 0 while true do
-                SyncWait(c + 160) LoadEntity("Cease")
-                SyncWait(c + 390) LoadEntity("Cease")
-                c = c + 390
-            end
-        end)
-
-        -- Shocker
-        task.spawn(function()
-            while true do task.wait(math.random(30, 70)) LoadEntity("Shocker") end
-        end)
+        -- RIPPER LOOP (300s cycle)
+        task.spawn(function() local c = 0 while true do SyncWait(c+80) LoadEntity("Ripper"); SyncWait(c+167) LoadEntity("Ripper"); c=c+300 end end)
+        -- REBOUND LOOP (450s cycle)
+        task.spawn(function() local c = 0 while true do SyncWait(c+290) LoadEntity("Rebound"); SyncWait(c+410) LoadEntity("Rebound"); c=c+450 end end)
+        -- SILENCE LOOP (600s cycle)
+        task.spawn(function() local c = 0 while true do SyncWait(c+455) LoadEntity("Silence"); SyncWait(c+600) LoadEntity("Silence"); c=c+600 end end)
+        -- CEASE LOOP (390s cycle)
+        task.spawn(function() local c = 0 while true do SyncWait(c+160) LoadEntity("Cease"); SyncWait(c+390) LoadEntity("Cease"); c=c+390 end end)
+        -- DEER GOD LOOP (500s cycle)
+        task.spawn(function() local c = 0 while true do SyncWait(c+420) LoadEntity("DeerGod"); c=c+500 end end)
+        -- SHOCKER (RANDOM)
+        task.spawn(function() while true do task.wait(math.random(30, 70)) LoadEntity("Shocker") end end)
     end
 end)
 
