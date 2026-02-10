@@ -38,7 +38,7 @@ local function SpawnShocker()
     mainPart.Anchored = true
     mainPart.CanCollide = false
     
-    entity:PivotTo(cam.CFrame * CFrame.new(0, 0, -12))
+    entity:PivotTo(Root.CFrame * CFrame.new(0, 0, -12))
     entity.Parent = workspace
 
     local spawnSound = entity:FindFirstChild("PlaySound")
