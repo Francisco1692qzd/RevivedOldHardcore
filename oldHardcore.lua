@@ -229,9 +229,9 @@ LatestRoom.Changed:Connect(function()
         -- Loops Infinitos de Entidades
         task.spawn(function() local c = 0 while true do SyncWait(c+80) LatestRoom.Changed:Wait() LoadEntity("Ripper"); SyncWait(c+167) LatestRoom.Changed:Wait() LoadEntity("Ripper"); c=c+300 end end)
         task.spawn(function() local c = 0 while true do SyncWait(c+290) LatestRoom.Changed:Wait() LoadEntity("Rebound"); SyncWait(c+410) LatestRoom.Changed:Wait() LoadEntity("Rebound"); c=c+450 end end)
-        task.spawn(function() local c = 0 while true do SyncWait(c+455) LatestRoom.Changed:Wait() LoadEntity("Silence"); SyncWait(c+600) LatestRoom.Changed:Wait() LoadEntity("Silence"); c=c+600 end end)
-        task.spawn(function() local c = 0 while true do SyncWait(c+160) LatestRoom.Changed:Wait() LoadEntity("Cease"); SyncWait(c+390) LatestRoom.Changed:Wait() LoadEntity("Cease"); c=c+390 end end)
-        task.spawn(function() local c = 0 while true do SyncWait(c+420) LatestRoom.Changed:Wait() LoadEntity("DeerGod"); c=c+500 end end)
+        task.spawn(function() local c = 0 while true do SyncWait(c+455) LoadEntity("Silence"); SyncWait(c+600) LoadEntity("Silence"); c=c+600 end end)
+        task.spawn(function() local c = 0 while true do SyncWait(c+160) LoadEntity("Cease"); SyncWait(c+390) LoadEntity("Cease"); c=c+390 end end)
+        task.spawn(function() local c = 0 while true do SyncWait(c+420) LoadEntity("DeerGod"); c=c+500 end end)
         task.spawn(function() while true do task.wait(math.random(30, 70)) LoadEntity("Shocker") end end)
     end
 end)
