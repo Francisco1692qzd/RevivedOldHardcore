@@ -126,6 +126,9 @@ local function CheckAndReplace()
                                             if base:FindFirstChild("Fallen") then base.Fallen:Play() end
                                             task.wait(0.8)
                                             if base:FindFirstChild("Bang") then base.Bang:Play() end
+                                            base.ParticleEmitter.Enabled = true
+                                            wait(0.5)
+                                            base.ParticleEmitter.Enabled = false
                                         end
                                     end
                                 end)
