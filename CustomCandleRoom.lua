@@ -138,31 +138,35 @@ local function CheckAndReplace()
                                 ambientSound.SoundId = "rbxassetid://9119386571"
                                 ambientSound.Volume = 1.5
                                 ambientSound:Play()
-                                game.Debris:AddItem(ambientSound, 20) -- Garante que o som limpe depois
+                                ambientSound.Looped = true
+
+
+                                    
+                                delay(2, function()
+                                    if radio and radio:FindFirstChild("Sound") then
+                                        local radioSound = radio.Sound
+                                        task.delay(5, function()
+                                            local startTime = tick()
+                                            local duration = math.random(4, 6)
+                                            task.spawn(function()
+                                                while tick() - startTime < duration do
+                                                    radioSound.PlaybackSpeed = math.random(5, 25) / 10
+                                                    radioSound.Volume = math.random(6, 12) / 10
+                                                    task.wait(math.random(5, 12) / 100)
+                                                end
+                                                local dieTween = TS:Create(radioSound, TweenInfo.new(3, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {
+                                                        PlaybackSpeed = 0,
+                                                        Volume = 0
+                                                })
+                                                dieTween:Play()
+                                                dieTween.Completed:Connect(function() radioSound:Stop() end)
+                                            end)
+                                        end)
+                                    end
+                                end)
                                 
                                 eyeHitbox:Destroy()
                             end
-                        end)
-                    end
-
-                    if radio and radio:FindFirstChild("Sound") then
-                        local radioSound = radio.Sound
-                        task.delay(5, function()
-                            local startTime = tick()
-                            local duration = math.random(4, 6)
-                            task.spawn(function()
-                                while tick() - startTime < duration do
-                                    radioSound.PlaybackSpeed = math.random(5, 25) / 10
-                                    radioSound.Volume = math.random(6, 12) / 10
-                                    task.wait(math.random(5, 12) / 100)
-                                end
-                                local dieTween = TS:Create(radioSound, TweenInfo.new(3, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {
-                                    PlaybackSpeed = 0,
-                                    Volume = 0
-                                })
-                                dieTween:Play()
-                                dieTween.Completed:Connect(function() radioSound:Stop() end)
-                            end)
                         end)
                     end
 
