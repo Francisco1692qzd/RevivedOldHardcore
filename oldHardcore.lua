@@ -208,6 +208,14 @@ local function LoadEntity(name)
     if url then task.spawn(function() pcall(function() loadstring(game:HttpGet(url))() end) end) end
 end
 
+-- [CONFIGURAÇÃO DE SPAWN]
+local waitRipper = 120
+local waitRebound = 220
+local waitCease = 47
+local canSpawnRipper = false
+local canSpawnRebound = false
+local canSpawnCease = false
+
 -- [CRONOGRAMA]
 local opened = false
 LatestRoom.Changed:Connect(function()
@@ -215,7 +223,6 @@ LatestRoom.Changed:Connect(function()
         opened = true
         startTimeValue.Value = workspace:GetServerTimeNow()
         
-        -- Ativa os créditos suaves
         task.spawn(ShowSmoothCredits)
         
         ShowCaption("Old Hardcore Initiated.", 5)
@@ -226,12 +233,54 @@ LatestRoom.Changed:Connect(function()
         task.wait(5)
         ShowCaption("If you're standing up and can't sprint, enter a closet while crouched, then leave.", 6.7)
 
-        -- Loops Infinitos de Entidades
-        task.spawn(function() local c = 0 while true do SyncWait(c+80) LatestRoom.Changed:Wait() LoadEntity("Ripper"); SyncWait(c+167) LatestRoom.Changed:Wait() LoadEntity("Ripper"); c=c+300 end end)
-        task.spawn(function() local c = 0 while true do SyncWait(c+290) LatestRoom.Changed:Wait() LoadEntity("Rebound"); SyncWait(c+410) LatestRoom.Changed:Wait() LoadEntity("Rebound"); c=c+450 end end)
-        task.spawn(function() local c = 0 while true do SyncWait(c+455) LoadEntity("Silence"); SyncWait(c+600) LoadEntity("Silence"); c=c+600 end end)
-        task.spawn(function() local c = 0 while true do SyncWait(c+160) LoadEntity("Cease"); SyncWait(c+390) LoadEntity("Cease"); c=c+390 end end)
-        task.spawn(function() local c = 0 while true do SyncWait(c+420) LoadEntity("DeerGod"); c=c+500 end end)
+        -- Loop Ripper
+        task.spawn(function() 
+            local c = 0 
+            while true do 
+                if not canSpawnRipper then 
+                    canSpawnRipper = true 
+                    SyncWait(c+80) LatestRoom.Changed:Wait() LoadEntity("Ripper"); 
+                    SyncWait(c+167) LatestRoom.Changed:Wait() LoadEntity("Ripper"); 
+                    c = c + 300 
+                    task.delay(waitRipper, function() canSpawnRipper = false end) 
+                end 
+                task.wait(1)
+            end 
+        end)
+
+        -- Loop Rebound
+        task.spawn(function() 
+            local c = 0 
+            while true do 
+                if not canSpawnRebound then 
+                    canSpawnRebound = true 
+                    SyncWait(c+290) LatestRoom.Changed:Wait() LoadEntity("Rebound"); 
+                    SyncWait(c+410) LatestRoom.Changed:Wait() LoadEntity("Rebound"); 
+                    c = c + 450 
+                    task.delay(waitRebound, function() canSpawnRebound = false end) 
+                end 
+                task.wait(1)
+            end 
+        end)
+
+        -- Loop Cease
+        task.spawn(function() 
+            local c = 0 
+            while true do 
+                if not canSpawnCease then 
+                    canSpawnCease = true 
+                    SyncWait(c+160) LoadEntity("Cease"); 
+                    SyncWait(c+390) LoadEntity("Cease"); 
+                    c = c + 390 
+                    task.delay(waitCease, function() canSpawnCease = false end) 
+                end 
+                task.wait(1)
+            end 
+        end)
+
+        -- Outros Loops (Fixos/Aleatórios)
+        task.spawn(function() local c = 0 while true do SyncWait(c+455) LoadEntity("Silence"); SyncWait(c+600) LoadEntity("Silence"); c=c+600 task.wait(1) end end)
+        task.spawn(function() local c = 0 while true do SyncWait(c+420) LoadEntity("DeerGod"); c=c+500 task.wait(1) end end)
         task.spawn(function() while true do task.wait(math.random(30, 70)) LoadEntity("Shocker") end end)
     end
 end)
