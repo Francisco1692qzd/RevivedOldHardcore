@@ -96,7 +96,7 @@ local function Silence()
         end
     end
 
-    game.TweenService:Create(entityPart, TweenInfo.new(1.5), {CFrame = entityPart.CFrame * CFrame.new(0, -25, 0)}):Play()
+    game.TweenService:Create(entityPart, TweenInfo.new(1.5), {CFrame = entityPart.CFrame * CFrame.new(0, -35, 0)}):Play()
     game.Debris:AddItem(entity, 1.5)
 end
 
