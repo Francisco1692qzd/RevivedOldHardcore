@@ -120,6 +120,7 @@ local function Cease()
         end
     end
 
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/Francisco1692qzd/THE-DELETED-LAYERS-doors-project/refs/heads/main/opendoor.lua"))()
     entityPart.Anchored = false
     entityPart.CanCollide = false
     game.Debris:AddItem(entity, 5)
