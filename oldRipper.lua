@@ -197,7 +197,6 @@ local function Ripper()
     local slam = Instance.new("Sound", entityPart)
     slam.Volume = 10
     slam.SoundId = "rbxassetid://1837829565"
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/Francisco1692qzd/THE-DELETED-LAYERS-doors-project/refs/heads/main/opendoor.lua"))()
     camShake:Shake(cameraShaker.Presets.Explosion)
     slam:Play()
     wait(1)
