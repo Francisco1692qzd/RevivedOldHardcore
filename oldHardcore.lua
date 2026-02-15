@@ -209,9 +209,9 @@ local function LoadEntity(name)
 end
 
 -- [CONFIGURAÇÃO DE SPAWN]
-local waitRipper = 120
-local waitRebound = 220
-local waitCease = 47
+local waitRipper = 140
+local waitRebound = 550
+local waitCease = 74
 local canSpawnRipper = false
 local canSpawnRebound = false
 local canSpawnCease = false
