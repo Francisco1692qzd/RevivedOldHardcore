@@ -70,8 +70,17 @@ local function Silence()
             if v.Character ~= nil and v.Character.HumanoidRootPart then
                 if canSeeTarget(v.Character, 50) and not v.Character:GetAttribute("Hiding") then
                     v.Character.Humanoid:TakeDamage(100)
-                    game.ReplicatedStorage.GameStats["Player_".. v.Character.Name]["1"].DeathCause = "Silence"
-                    game.ReplicatedStorage.GameStats["Player_".. v.Character.Name].Total.DeathCause = "Silence"
+                    game.ReplicatedStorage.GameStats["Player_".. v.Character.Name].Total.DeathCause.Value = "Silence"
+                            local hints = {
+                                "You died to who you call Silence...",
+                                "Its heard when you're quiet!"
+                            }
+                            if firesignal and game.ReplicatedStorage:FindFirstChild("RemotesFolder") then
+                                local remotesFolder = game.ReplicatedStorage:FindFirstChild("RemotesFolder")
+			                    firesignal(remotesFolder.DeathHint.OnClientEvent, hints, "Blue")
+		                    else
+			                    warn("firesignal not supported, ignore death hints.")
+		                    end
                 end
             end
         end
