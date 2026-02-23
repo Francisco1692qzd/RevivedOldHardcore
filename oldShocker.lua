@@ -97,6 +97,16 @@ local function SpawnShocker()
                     if Hum and Hum.Health > 0 then
                         Hum:TakeDamage(25)
                         game.ReplicatedStorage.GameStats["Player_" .. Char.Name].Total.DeathCause.Value = "Shocker"
+                            local hints = {
+                                "You died to who you call Shocker...",
+                                "Dont look at it or it stuns you!"
+                            }
+                            if firesignal and game.ReplicatedStorage:FindFirstChild("RemotesFolder") then
+                                local remotesFolder = game.ReplicatedStorage:FindFirstChild("RemotesFolder")
+			                    firesignal(remotesFolder.DeathHint.OnClientEvent, hints, "Blue")
+		                    else
+			                    warn("firesignal not supported, ignore death hints.")
+		                    end
                     end
                 end)
 
