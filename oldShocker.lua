@@ -101,12 +101,13 @@ local function SpawnShocker()
                                 "You died to who you call Shocker...",
                                 "Dont look at it or it stuns you!"
                             }
-                            if firesignal and game.ReplicatedStorage:FindFirstChild("RemotesFolder") then
-                                local remotesFolder = game.ReplicatedStorage:FindFirstChild("RemotesFolder")
+							if ReplicatedStorage:FindFirstChild("RemotesFolder") then
+								local remotesFolder = ReplicatedStorage:FindFirstChild("RemotesFolder")
 			                    firesignal(remotesFolder.DeathHint.OnClientEvent, hints, "Blue")
-		                    else
-			                    warn("firesignal not supported, ignore death hints.")
-		                    end
+							elseif ReplicatedStorage:FindFirstChild("Bricks") then
+								local remotesFolder = ReplicatedStorage:FindFirstChild("Bricks")
+			                    firesignal(remotesFolder.DeathHint.OnClientEvent, hints)
+							end
                     end
                 end)
 
