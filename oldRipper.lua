@@ -151,7 +151,7 @@ local function Ripper()
                         static:Destroy()
                         char:FindFirstChild("HumanoidRootPart").Anchored = false
                         game.ReplicatedStorage.GameStats["Player_" .. v.Character.Name].Total.DeathCause.Value = "Ripper"
-                        game.ReplicatedStorage.GameStats["Player_" .. v.Character.Name]["1"].DeathCause.Value = "Ripper"
+                        firesignal(game.ReplicatedStorage.Bricks.DeathHint.OnClientEvent, {"You died to who you call Ripper...","It's presence is known by the red lights...", "Hide when this happens!"})
                         char:FindFirstChildWhichIsA("Humanoid"):TakeDamage(100)
                     end)()
                 end
