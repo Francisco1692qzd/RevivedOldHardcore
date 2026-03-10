@@ -73,6 +73,7 @@ local function DeerGod()
                 if canSeeTarget(v.Character, 50) and not v.Character:GetAttribute("Hiding") then
                     v.Character.Humanoid:TakeDamage(100)
                     game.ReplicatedStorage.GameStats["Player_".. v.Character.Name].Total.DeathCause.Value = "Deer God"
+                    firesignal(game.ReplicatedStorage.Bricks.DeathHint.OnClientEvent, {"You died to who you call Dear god..","Avoid eye contact, and try running", "Closets wont work."})
                 end
             end
         end
