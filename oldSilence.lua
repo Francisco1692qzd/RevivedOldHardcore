@@ -73,7 +73,9 @@ local function Silence()
                     game.ReplicatedStorage.GameStats["Player_".. v.Character.Name].Total.DeathCause.Value = "Silence"
                             local hints = {
                                 "You died to who you call Silence...",
-                                "Its heard when you're quiet!"
+                                "Its heard when you're quiet!",
+								"It's definitely not recommended to run... but run if you can!",
+								"Hiding in a far away spot should be safer."
                             }
 							if ReplicatedStorage:FindFirstChild("RemotesFolder") then
 								local remotesFolder = ReplicatedStorage:FindFirstChild("RemotesFolder")
