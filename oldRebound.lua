@@ -194,11 +194,7 @@ local function Rebound()
                             Plr.Character:FindFirstChildWhichIsA("Humanoid"):TakeDamage(100)
                             game.ReplicatedStorage.GameStats["Player_" .. Plr.Character.Name].Total.DeathCause.Value = "Rebound"
                             game.ReplicatedStorage.GameStats["Player_" .. Plr.Character.Name]["1"].DeathCause.Value = "Rebound"
-                            game.ReplicatedStorage.Bricks.DeathHint.OnClientEvent:Fire({
-                                "You died to who you call Rebound...",
-                                "He makes his presence known and keeps coming back...",
-                                "Hide when this happens!"
-                            })
+                            firesignal(game.ReplicatedStorage.Bricks.DeathHint.OnClientEvent, {"You died to Rebound...","It may trick you by coming through walls or next rooms...", "Hide when this happens!"})
                         end)
                         wait(0.5)
                         game.TweenService:Create(static, TweenInfo.new(1), {ImageTransparency = 1}):Play()
