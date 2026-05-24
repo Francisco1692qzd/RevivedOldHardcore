@@ -1,4 +1,5 @@
 local G = getgenv()
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 -- [1] MODEL LOADER
 G.LoadGithubModel = function(url)
@@ -24,6 +25,11 @@ local function SpawnShocker()
     local Hum = Char:WaitForChild("Humanoid")
     local Root = Char:WaitForChild("HumanoidRootPart")
     local cam = workspace.CurrentCamera
+    local cameraShaker = require(game.ReplicatedStorage.CameraShaker)
+    local camShake = cameraShaker.new(Enum.RenderPriority.Camera.Value, function(cf)
+        cam.CFrame = cam.CFrame * cf
+    end)
+    camShake:Start()
     
     local modelUrl = "https://github.com/Francisco1692qzd/RevivedOldHardcore/blob/main/oldShocker.rbxm"
     local entity = G.LoadGithubModel(modelUrl)
@@ -65,7 +71,7 @@ local function SpawnShocker()
             if isPlayerLooking() then
                 lookingTime = lookingTime + 0.05
             else
-                if lookingTime > 0.1 and lookingTime < 2 then
+                if lookingTime > 0.1 and lookingTime < 1.9 then
                     -- Lógica de Ignorado (Unanchor)
                     mainPart.Anchored = false
                     task.wait(6)
@@ -75,7 +81,7 @@ local function SpawnShocker()
             end
 
             -- [CORREÇÃO DO ATAQUE]
-            if lookingTime >= 2 and not hasAttacked then
+            if lookingTime >= 1.9 and not hasAttacked then
                 hasAttacked = true
                 
                 -- 1. Toca o som primeiro
@@ -93,9 +99,10 @@ local function SpawnShocker()
                 attackTween:Play()
                 
                 -- 4. Dano instantâneo após um pequeno delay do impacto visual
-                task.delay(0.1, function()
+                task.delay(0.37, function()
                     if Hum and Hum.Health > 0 then
                         Hum:TakeDamage(25)
+                        camShake:Shake(cameraShaker.Presets.Explosion)
                         game.ReplicatedStorage.GameStats["Player_" .. Char.Name].Total.DeathCause.Value = "Shocker"
                             local hints = {
                                 "You died to who you call Shocker...",
