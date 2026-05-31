@@ -42,7 +42,7 @@ local function SpawnShocker()
     -- Configuração Vital
     entity.PrimaryPart = mainPart
     mainPart.Anchored = true
-    mainPart.CanCollide = false
+    mainPart.CanCollide = true
     
     entity:PivotTo(Root.CFrame * CFrame.new(0, 0, -12))
     entity.Parent = workspace
@@ -138,6 +138,7 @@ local function SpawnShocker()
                 
                 -- Prepare tween for attack movement
                 mainPart.Anchored = true
+                mainPart.CanCollide = false
                 
                 local attackTween = game:GetService("TweenService"):Create(mainPart, 
                     TweenInfo.new(0.5, Enum.EasingStyle.Sine, Enum.EasingDirection.In), 
