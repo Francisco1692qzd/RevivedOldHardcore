@@ -140,7 +140,7 @@ local function SpawnShocker()
                 
                 -- Prepare tween for attack movement
                 mainPart.Anchored = true
-                mainPart.CanCollide = false
+                mainPart.CanCollide = true
                 
                 local attackTween = game:GetService("TweenService"):Create(mainPart, 
                     TweenInfo.new(0.5, Enum.EasingStyle.Sine, Enum.EasingDirection.In), 
