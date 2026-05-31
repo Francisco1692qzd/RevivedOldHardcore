@@ -54,49 +54,91 @@ local function SpawnShocker()
 
     local lookingTime = 0
     local hasAttacked = false
+    local isLookingAtSpawn = false -- Track initial look state
 
+    -- IMPROVED: Better line-of-sight and angle detection
     local function isPlayerLooking()
-        local _, onScreen = cam:WorldToViewportPoint(mainPart.Position)
-        if onScreen then
-            local camToEntity = (mainPart.Position - cam.CFrame.Position).Unit
-            return camToEntity:Dot(cam.CFrame.LookVector) > 0.5 
-        end
-        return false
+        -- Check if entity is on screen
+        local entityPos = mainPart.Position
+        local vector, onScreen = cam:WorldToViewportPoint(entityPos)
+        
+        if not onScreen then return false end
+        
+        -- Calculate angle between camera look vector and direction to entity
+        local cameraToEntity = (entityPos - cam.CFrame.Position).Unit
+        local dotProduct = cameraToEntity:Dot(cam.CFrame.LookVector)
+        
+        -- More forgiving angle threshold (0.7 = ~45 degrees)
+        return dotProduct > 0.7
     end
 
-	for i, v in pairs(entity:GetChildren()) do
-		if (v:IsA("Sound") and v.Name == "PlaySound") then
-			if v.PlayOnRemove == true then v.PlayOnRemove = false end
-		end
-	end
+    -- Fix sound properties
+    for i, v in pairs(entity:GetChildren()) do
+        if (v:IsA("Sound") and v.Name == "PlaySound") then
+            if v.PlayOnRemove == true then v.PlayOnRemove = false end
+        end
+    end
+
+    -- CHECK INITIAL LOOK STATE BEFORE MAIN LOOP
+    task.wait(0.1) -- Small delay to ensure everything is loaded
+    if not isPlayerLooking() then
+        -- Player is NOT looking at spawn - entity should ignore and disappear
+        mainPart.Anchored = false
+        task.wait(6)
+        if entity then entity:Destroy() end
+        camShake:Stop()
+        return
+    end
 
     task.spawn(function()
+        local lastLookState = isPlayerLooking()
+        local timeSinceLastLook = 0
+        
         while entity and entity.Parent and not hasAttacked do
-            task.wait(0.05) 
+            task.wait(0.05)
             
-            if isPlayerLooking() then
+            local currentLookState = isPlayerLooking()
+            
+            -- FIXED: Proper look tracking logic
+            if currentLookState then
+                -- Player is looking at entity
+                if not lastLookState then
+                    -- Just started looking
+                    lookingTime = 0
+                end
                 lookingTime = lookingTime + 0.05
+                timeSinceLastLook = 0
             else
-                if lookingTime > 0.1 and lookingTime < 1.9 then
-                    -- Lógica de Ignorado (Unanchor)
+                -- Player is NOT looking at entity
+                timeSinceLastLook = timeSinceLastLook + 0.05
+                
+                -- If player looked away and look time was between threshold
+                if lookingTime > 0.1 and lookingTime < 1.9 and timeSinceLastLook > 0.1 then
+                    -- Entity ignores player and disappears
                     mainPart.Anchored = false
                     task.wait(6)
-                    entity:Destroy()
+                    if entity then entity:Destroy() end
                     break
                 end
+                
+                -- Reset looking time if player isn't looking
+                if timeSinceLastLook > 0.5 then
+                    lookingTime = 0
+                end
             end
+            
+            lastLookState = currentLookState
 
-            -- [CORREÇÃO DO ATAQUE]
+            -- [ATTACK LOGIC]
             if lookingTime >= 1.9 and not hasAttacked then
                 hasAttacked = true
                 
-                -- 1. Toca o som primeiro
+                -- Play attack sound
                 if attackSound then attackSound:Play() end
                 
-                -- 2. Prepara a física para o movimento
-                mainPart.Anchored = true -- Mantemos True para o Tween CFrame funcionar
+                -- Prepare tween for attack movement
+                mainPart.Anchored = true
                 
-                -- 3. Cria o Tween
                 local attackTween = game:GetService("TweenService"):Create(mainPart, 
                     TweenInfo.new(0.5, Enum.EasingStyle.Sine, Enum.EasingDirection.In), 
                     {CFrame = Root.CFrame}
@@ -104,30 +146,49 @@ local function SpawnShocker()
                 
                 attackTween:Play()
                 
-                -- 4. Dano instantâneo após um pequeno delay do impacto visual
+                -- Deal damage after visual impact
                 task.delay(0.37, function()
                     if Hum and Hum.Health > 0 then
                         Hum:TakeDamage(25)
                         camShake:Shake(cameraShaker.Presets.Explosion)
-                        game.ReplicatedStorage.GameStats["Player_" .. Char.Name].Total.DeathCause.Value = "Shocker"
-                            local hints = {
-                                "You died to who you call Shocker...",
-                                "Dont look at it or it stuns you!"
-                            }
-							if ReplicatedStorage:FindFirstChild("RemotesFolder") then
-								local remotesFolder = ReplicatedStorage:FindFirstChild("RemotesFolder")
-			                    firesignal(remotesFolder.DeathHint.OnClientEvent, hints, "Blue")
-							elseif ReplicatedStorage:FindFirstChild("Bricks") then
-								local remotesFolder = ReplicatedStorage:FindFirstChild("Bricks")
-			                    firesignal(remotesFolder.DeathHint.OnClientEvent, hints)
-							end
+                        
+                        -- Set death cause
+                        local statsFolder = game.ReplicatedStorage:FindFirstChild("GameStats")
+                        if statsFolder then
+                            local playerStat = statsFolder:FindFirstChild("Player_" .. Char.Name)
+                            if playerStat and playerStat:FindFirstChild("Total") then
+                                local total = playerStat.Total
+                                if total:FindFirstChild("DeathCause") then
+                                    total.DeathCause.Value = "Shocker"
+                                end
+                            end
+                        end
+                        
+                        -- Show death hints
+                        local hints = {
+                            "You died to who you call Shocker...",
+                            "Don't look at it or it stuns you!"
+                        }
+                        
+                        if ReplicatedStorage:FindFirstChild("RemotesFolder") then
+                            local remotesFolder = ReplicatedStorage:FindFirstChild("RemotesFolder")
+                            if remotesFolder:FindFirstChild("DeathHint") then
+                                firesignal(remotesFolder.DeathHint.OnClientEvent, hints, "Blue")
+                            end
+                        elseif ReplicatedStorage:FindFirstChild("Bricks") then
+                            local remotesFolder = ReplicatedStorage:FindFirstChild("Bricks")
+                            if remotesFolder:FindFirstChild("DeathHint") then
+                                firesignal(remotesFolder.DeathHint.OnClientEvent, hints)
+                            end
+                        end
                     end
                 end)
 
-                -- 5. Finalização garantida
+                -- Cleanup after attack
                 attackTween.Completed:Wait()
                 task.wait(0.75)
                 if entity then entity:Destroy() end
+                camShake:Stop()
                 break
             end
         end
