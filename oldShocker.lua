@@ -64,6 +64,12 @@ local function SpawnShocker()
         return false
     end
 
+	for i, v in pairs(entity:GetChildren()) do
+		if (v:IsA("Sound") and v.Name == "PlaySound") then
+			if v.PlayOnRemove == true then v.PlayOnRemove = false end
+		end
+	end
+
     task.spawn(function()
         while entity and entity.Parent and not hasAttacked do
             task.wait(0.05) 
