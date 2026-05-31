@@ -84,6 +84,7 @@ local function SpawnShocker()
     if not isPlayerLooking() then
         -- Player is NOT looking at spawn - entity should ignore and disappear
         mainPart.Anchored = false
+        mainPart.CanCollide = false
         task.wait(6)
         if entity then entity:Destroy() end
         camShake:Stop()
@@ -116,6 +117,7 @@ local function SpawnShocker()
                 if lookingTime > 0.1 and lookingTime < 1.9 and timeSinceLastLook > 0.1 then
                     -- Entity ignores player and disappears
                     mainPart.Anchored = false
+                    mainPart.CanCollide = false
                     task.wait(6)
                     if entity then entity:Destroy() end
                     break
