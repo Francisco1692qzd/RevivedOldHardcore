@@ -129,7 +129,7 @@ local function SpawnShocker()
 	    ObtainedBadge.Parent = workspace
         task.wait(6)
         if entity then entity:Destroy() end
-        camShake:Stop()
+        --camShake:Stop()
         return
     end
 
@@ -246,7 +246,7 @@ local function SpawnShocker()
                 attackTween.Completed:Wait()
                 task.wait(0.75)
                 if entity then entity:Destroy() end
-                camShake:Stop()
+                --camShake:Stop()
                 break
             end
         end
