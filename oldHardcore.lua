@@ -212,9 +212,11 @@ end
 local waitRipper = 140
 local waitRebound = 550
 local waitCease = 74
+local waitA60 = 32
 local canSpawnRipper = false
 local canSpawnRebound = false
 local canSpawnCease = false
+local canSpawnA60 = false
 
 -- [CRONOGRAMA]
 local opened = false
@@ -278,6 +280,21 @@ LatestRoom.Changed:Connect(function()
             end 
         end)
 
+        -- Loop A-60
+        task.spawn(function() 
+            local c = 0 
+            while true do 
+                if not canSpawnA60 then 
+                    canSpawnA60 = true 
+                    SyncWait(c+730) LoadEntity("A60"); 
+                    SyncWait(c+1200) LoadEntity("A60"); 
+                    c = c + 910 
+                    task.delay(waitA60, function() canSpawnA60 = false end) 
+                end 
+                task.wait(1)
+            end 
+        end)
+        
         -- Outros Loops (Fixos/Aleatórios)
         task.spawn(function() local c = 0 while true do SyncWait(c+455) LoadEntity("Silence"); SyncWait(c+600) LoadEntity("Silence"); c=c+600 task.wait(1) end end)
         task.spawn(function() local c = 0 while true do SyncWait(c+420) LoadEntity("DeerGod"); c=c+500 task.wait(1) end end)
