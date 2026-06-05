@@ -57,6 +57,14 @@ local function Silence()
     local storer = ambruhspeed
     local entity = nil
     local killed = false
+	if not game.ReplicatedStorage:FindFirstChild("ClientModules") then return end
+    if not game.ReplicatedStorage.ClientModules:FindFirstChild("Module_Events") then return end
+    if not workspace:FindFirstChild("CurrentRooms") then return end
+    local required = require(game.ReplicatedStorage.ClientModules.Module_Events)
+    local currentRooms = workspace:FindFirstChild("CurrentRooms")
+    local latestRoomInt = game.ReplicatedStorage.GameData.LatestRoom
+    local latestRoomModel = currentRooms:FindFirstChild(latestRoomInt.Value)
+    --required.flickerLights(latestRoomModel, 74)
     local rawUrl = "https://raw.githubusercontent.com/Francisco1692qzd/RevivedOldHardcore/main/oldSilence.rbxm"
     -- CORREÇÃO DE ESCOPO: Atribuindo o retorno à variável local correta
     if G.LoadGithubModel then
@@ -124,6 +132,7 @@ local function Silence()
             local room = currentRooms[i]
             if room and room:FindFirstChild("Nodes") then
                 local nodes = room:FindFirstChild("Nodes")
+				required.breakLights(room)
                 for v = 1, #nodes:GetChildren() do
                     if nodes:FindFirstChild(v) then
                         local node = nodes[v]
