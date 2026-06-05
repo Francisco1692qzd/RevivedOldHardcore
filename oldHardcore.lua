@@ -103,7 +103,9 @@ local entityURLs = {
     DeerGod = "https://raw.githubusercontent.com/Francisco1692qzd/RevivedOldHardcore/refs/heads/main/oldDeerGod.lua",
     Cease = "https://raw.githubusercontent.com/Francisco1692qzd/RevivedOldHardcore/refs/heads/main/oldCease.lua",
     Shocker = "https://raw.githubusercontent.com/Francisco1692qzd/RevivedOldHardcore/refs/heads/main/oldShocker.lua",
-    Silence = "https://raw.githubusercontent.com/Francisco1692qzd/RevivedOldHardcore/refs/heads/main/oldSilence.lua"
+    Silence = "https://raw.githubusercontent.com/Francisco1692qzd/RevivedOldHardcore/refs/heads/main/oldSilence.lua",
+	A60 = "https://raw.githubusercontent.com/Francisco1692qzd/RevivedOldHardcore/refs/heads/main/oldA60.lua",
+	Frostbite = "https://raw.githubusercontent.com/Francisco1692qzd/RevivedOldHardcore/refs/heads/main/oldFrostbite.lua"
 }
 
 -- [SINCRONIA]
@@ -213,10 +215,12 @@ local waitRipper = 140
 local waitRebound = 550
 local waitCease = 74
 local waitA60 = 32
+local waitFrostbite = 195
 local canSpawnRipper = false
 local canSpawnRebound = false
 local canSpawnCease = false
 local canSpawnA60 = false
+local canSpawnFrostbite = false
 
 -- [CRONOGRAMA]
 local opened = false
@@ -234,6 +238,13 @@ LatestRoom.Changed:Connect(function()
         ShowCaption("Stamina and Mobile support ready.", 5)
         task.wait(5)
         ShowCaption("If you're standing up and can't sprint, enter a closet while crouched, then leave.", 6.7)
+		task.wait(5.6)
+		task.spawn(function()
+			ShowCaption("Big Thanks to Ostah (Small YouTuber) for giving A-60 model.", 4)
+			task.wait(4)
+			ShowCaption("Also thanks to him again for giving me the model of old Frostbite.", 6)
+			task.wait(3)
+		end)
 
         -- Loop Ripper
         task.spawn(function() 
@@ -256,9 +267,9 @@ LatestRoom.Changed:Connect(function()
             while true do 
                 if not canSpawnRebound then 
                     canSpawnRebound = true 
-                    SyncWait(c+290) LatestRoom.Changed:Wait() LoadEntity("Rebound"); 
-                    SyncWait(c+410) LatestRoom.Changed:Wait() LoadEntity("Rebound"); 
-                    c = c + 450 
+                    SyncWait(c+670) LatestRoom.Changed:Wait() LoadEntity("Rebound"); 
+                    SyncWait(c+1100) LatestRoom.Changed:Wait() LoadEntity("Rebound"); 
+                    c = c + 930 
                     task.delay(waitRebound, function() canSpawnRebound = false end) 
                 end 
                 task.wait(1)
@@ -294,10 +305,25 @@ LatestRoom.Changed:Connect(function()
                 task.wait(1)
             end 
         end)
+
+		-- Loop Frostbite
+        task.spawn(function() 
+            local c = 0 
+            while true do 
+                if not canSpawnFrostbite then 
+                    canSpawnFrostbite = true 
+                    SyncWait(c+270) LatestRoom.Changed:Wait() LoadEntity("Frostbite"); 
+                    SyncWait(c+645) LatestRoom.Changed:Wait() LoadEntity("Frostbite"); 
+                    c = c + 900
+                    task.delay(waitFrostbite, function() canSpawnFrostbite = false end) 
+                end 
+                task.wait(1)
+            end 
+        end)
         
         -- Outros Loops (Fixos/Aleatórios)
-        task.spawn(function() local c = 0 while true do SyncWait(c+455) LoadEntity("Silence"); SyncWait(c+600) LoadEntity("Silence"); c=c+600 task.wait(1) end end)
-        task.spawn(function() local c = 0 while true do SyncWait(c+420) LoadEntity("DeerGod"); c=c+500 task.wait(1) end end)
+        task.spawn(function() local c = 0 while true do SyncWait(c+850) LoadEntity("Silence"); SyncWait(c+1530) LoadEntity("Silence"); c=c+600 task.wait(1) end end)
+        task.spawn(function() local c = 0 while true do SyncWait(c+1500) LoadEntity("DeerGod"); c=c+2100 task.wait(1) end end)
         task.spawn(function() while true do task.wait(math.random(30, 70)) LoadEntity("Shocker") end end)
     end
 end)
