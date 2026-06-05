@@ -7,15 +7,36 @@ local TS = game:GetService("TweenService")
 -- 1. GARANTINDO O XENO LOADER NO AMBIENTE
 if not G.LoadGithubModel then
     G.LoadGithubModel = function(url)
-        if not (writefile and getcustomasset and request) then return nil end
-        local response = request({Url = url, Method = "GET"})
-        if response.StatusCode ~= 200 then return nil end
-        local fileName = "temp_model_" .. tick() .. ".rbxm"
-        writefile(fileName, response.Body)
+        if not (writefile and getcustomasset and request and isfile) then return nil end
+        
+        -- Create consistent filename from URL
+        local function getHash(str)
+            local hash = 0
+            for i = 1, #str do
+                hash = (hash * 31 + string.byte(str, i)) % 2^32
+            end
+            return tostring(hash)
+        end
+        
+        local fileName = "candle_" .. getHash(url) .. ".rbxm"
+        
+        -- Only download if file doesn't exist
+        if not isfile(fileName) then
+            local response = request({Url = url, Method = "GET"})
+            if response.StatusCode ~= 200 then return nil end
+            writefile(fileName, response.Body)
+        end
+        
         local assetId = getcustomasset(fileName)
         local success, result = pcall(function()
             return game:GetObjects(assetId)[1]
         end)
+        
+        -- Clean up corrupted file if loading failed
+        if not (success and result) then
+            pcall(function() if delfile then delfile(fileName) end end)
+        end
+        
         return success and result or nil
     end
 end
@@ -79,7 +100,7 @@ local function CheckAndReplace()
                 local startPart = candleRoom:FindFirstChild("RoomStart") or candleRoom.PrimaryPart
                 if startPart then
                     candleRoom.PrimaryPart = startPart
-                    candleRoom:SetPrimaryPartCFrame(targetCFrame * CFrame.Angles(0, math.rad(180), 0))
+                    candleRoom:SetPrimaryPartCFrame(targetCFrame * CFrame.Angles(0, math.rad(180), 0) * CFrame.new(0,0,0.6))
                     fakeDoor:Destroy()
                     
                     local newDoorRoom = candleRoom:FindFirstChild("Door")
