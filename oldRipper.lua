@@ -31,7 +31,8 @@ G.LoadGithubModel = function(url)
     end)
     
     if success and result then 
-        return result 
+        -- AUTOMATICALLY CLONE so you get a fresh instance every time
+        return result:Clone()
     end
     
     -- Clean up corrupted file if load fails
