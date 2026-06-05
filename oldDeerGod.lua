@@ -130,6 +130,14 @@ local function DeerGod()
     local latestRoomInt = game.ReplicatedStorage.GameData.LatestRoom
     local latestRoomModel = currentRooms:FindFirstChild(latestRoomInt.Value)
     required.flickerLights(latestRoomModel, 74)
+    local cameraShaker = require(game.ReplicatedStorage.CameraShaker)
+    local camera = workspace.CurrentCamera
+
+    local camShake = cameraShaker.new(Enum.RenderPriority.Camera.Value, function(cf)
+        camera.CFrame = camera.CFrame * cf
+    end)
+    camShake:Start()
+    
     local entity = nil
     local killed = false
     local rawUrl = "https://raw.githubusercontent.com/Francisco1692qzd/RevivedOldHardcore/main/oldDeerGod.rbxm"
@@ -178,6 +186,11 @@ local function DeerGod()
                     game.ReplicatedStorage.GameStats["Player_".. v.Character.Name].Total.DeathCause.Value = "Deer God"
                     firesignal(game.ReplicatedStorage.Bricks.DeathHint.OnClientEvent, {"You died to who you call Dear god..","Avoid eye contact, and try running", "Closets wont work."})
                 end
+            end
+        end
+        while entity ~= nil and entityPart ~= nil do wait(1)
+            if entity.Parent ~= nil and entityPart.Parent ~= nil then
+                camShake:Shake(cameraShaker.Presets.Earthquake)
             end
         end
     end)
