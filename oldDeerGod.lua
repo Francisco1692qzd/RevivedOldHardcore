@@ -2,11 +2,13 @@
 local G = getgenv()
 
 -- Garantindo que a função exista no ambiente Global
-G.LoadGithubModel = function(url)
-    if not (writefile and getcustomasset and request and isfile and delfile and readfile) then
-        warn("Missing required functions: writefile, getcustomasset, request, isfile, delfile, or readfile")
+G.LoadGithubModel = function(url, forceRefresh)
+    if not (writefile and getcustomasset and request and isfile and delfile) then
+        warn("Missing required functions: writefile, getcustomasset, request, isfile, or delfile")
         return nil
     end
+    
+    forceRefresh = forceRefresh or false
     
     -- Generate a consistent filename based on URL
     local function getFileNameFromUrl(url)
@@ -17,19 +19,18 @@ G.LoadGithubModel = function(url)
     
     local fileName = getFileNameFromUrl(url)
     
-    -- Check if file already exists
-    local fileExists = false
-    local fileCheckSuccess, fileExistsResult = pcall(function()
-        return isfile(fileName)
-    end)
-    
-    if fileCheckSuccess and fileExistsResult then
-        fileExists = true
-        print("File already exists: " .. fileName)
+    -- Force refresh: delete existing file
+    if forceRefresh and isfile(fileName) then
+        pcall(function() delfile(fileName) end)
+        print("Force refresh: deleted cached file")
     end
     
-    -- Only download if file doesn't exist
-    if not fileExists then
+    -- Check if file already exists
+    local fileExists = isfile(fileName)
+    
+    if fileExists then
+        print("Using cached file: " .. fileName)
+    else
         print("Downloading model from: " .. url)
         
         local response = request({
@@ -52,8 +53,6 @@ G.LoadGithubModel = function(url)
         end
         
         print("File saved: " .. fileName)
-    else
-        print("Using cached file: " .. fileName)
     end
     
     -- Get custom asset
@@ -69,38 +68,45 @@ G.LoadGithubModel = function(url)
     
     assetId = assetResult
     
-    -- Load the model
+    -- Load the model (clone it so we can reuse the cached version)
     local model
     local loadSuccess, loadResult = pcall(function()
-        return game:GetObjects(assetId)[1]
+        local objects = game:GetObjects(assetId)
+        if objects and #objects > 0 then
+            return objects[1]:Clone() -- Clone to allow multiple instances
+        end
+        return nil
     end)
     
-    if not loadSuccess then
+    if not loadSuccess or not loadResult then
         warn("Failed to load model: " .. tostring(loadResult))
         pcall(function() delfile(fileName) end)
         return nil
     end
     
     model = loadResult
-    
-    if not model then
-        warn("Model is nil after loading")
-        return nil
-    end
-    
     print("Model loaded successfully: " .. fileName)
     return model
 end
 
+local deerGodThread = nil
+local currentEntity = nil
+
 local function DeerGod()
+    -- Kill previous instance if running
+    if deerGodThread then
+        pcall(function()
+            if currentEntity then
+                currentEntity:Destroy()
+                currentEntity = nil
+            end
+        end)
+        deerGodThread = nil
+    end
+    
     -- Check all required services first
     local repStorage = game:GetService("ReplicatedStorage")
     local workspace = game:GetService("Workspace")
-    
-    if not repStorage then
-        warn("ReplicatedStorage not found")
-        return
-    end
     
     if not repStorage:FindFirstChild("ClientModules") then
         warn("ClientModules not found")
@@ -119,38 +125,43 @@ local function DeerGod()
     
     local required = require(repStorage.ClientModules.Module_Events)
     local currentRooms = workspace.CurrentRooms
-    local latestRoomInt = repStorage:FindFirstChild("GameData") and repStorage.GameData:FindFirstChild("LatestRoom")
+    local gameData = repStorage:FindFirstChild("GameData")
+    
+    if not gameData then
+        warn("GameData not found")
+        return
+    end
+    
+    local latestRoomInt = gameData:FindFirstChild("LatestRoom")
     
     if not latestRoomInt then
         warn("LatestRoom not found in GameData")
         return
     end
     
-    local latestRoomModel = currentRooms:FindFirstChild(tostring(latestRoomInt.Value))
+    local latestRoomValue = latestRoomInt.Value
+    local latestRoomModel = currentRooms:FindFirstChild(tostring(latestRoomValue))
     
     -- Initialize the events module first
-    --[[if required.init then
-        required.init()
-    end--]]
+    if required.init then
+        pcall(function() required.init() end)
+    end
     
     -- Flicker lights safely
     if latestRoomModel and required.flickerLights then
-        local success, err = pcall(function()
-            required.flickerLights(latestRoomModel, 74)
+        pcall(function()
+            required.flickerLights(latestRoomModel, 52)
         end)
-        if not success then
-            warn("flickerLights failed: " .. tostring(err))
-        end
     end
     
     -- Camera shaker setup
-    local cameraShaker = repStorage:FindFirstChild("CameraShaker")
-    if not cameraShaker then
+    local cameraShakerModule = repStorage:FindFirstChild("CameraShaker")
+    if not cameraShakerModule then
         warn("CameraShaker module not found")
         return
     end
     
-    local cameraShakerModule = require(cameraShaker)
+    local cameraShaker = require(cameraShakerModule)
     local camera = workspace.CurrentCamera
     
     if not camera then
@@ -158,7 +169,7 @@ local function DeerGod()
         return
     end
     
-    local camShake = cameraShakerModule.new(Enum.RenderPriority.Camera.Value, function(cf)
+    local camShake = cameraShaker.new(Enum.RenderPriority.Camera.Value, function(cf)
         if camera then
             camera.CFrame = camera.CFrame * cf
         end
@@ -174,16 +185,18 @@ local function DeerGod()
     
     local rawUrl = "https://raw.githubusercontent.com/Francisco1692qzd/RevivedOldHardcore/main/oldDeerGod.rbxm"
     
-    -- Load the model
+    -- Load the model (force refresh = false for normal use)
     if G.LoadGithubModel then
         local success, result = pcall(function()
-            return G.LoadGithubModel(rawUrl)
+            return G.LoadGithubModel(rawUrl, false) -- Set to true if you want to force re-download
         end)
         if success and result then
             entity = result
             entity.Parent = workspace
+            currentEntity = entity -- Store for cleanup
         else
             warn("Failed to load model: " .. tostring(result))
+            return
         end
     end
     
@@ -195,6 +208,7 @@ local function DeerGod()
     local entityPart = entity:FindFirstChildWhichIsA("BasePart")
     if not entityPart then
         warn("Entity has no BasePart")
+        entity:Destroy()
         return
     end
     
@@ -230,9 +244,9 @@ local function DeerGod()
     wait(1)
     
     -- Death detection thread
-    spawn(function()
+    local deathThread = spawn(function()
         while entity ~= nil and entityPart ~= nil and entityPart.Parent ~= nil do 
-            wait(0.1) -- Changed from 0.01 to 0.1 for performance
+            wait(0.1)
             
             local player = game.Players.LocalPlayer
             if not player then continue end
@@ -259,24 +273,29 @@ local function DeerGod()
                     if bricks then
                         local deathHint = bricks:FindFirstChild("DeathHint")
                         if deathHint and deathHint.OnClientEvent then
-                            firesignal(deathHint.OnClientEvent, {
-                                "You died to who you call Dear god..",
-                                "Avoid eye contact, and try running",
-                                "Closets wont work."
-                            })
+                            pcall(function()
+                                firesignal(deathHint.OnClientEvent, {
+                                    "You died to who you call Dear god..",
+                                    "Avoid eye contact, and try running",
+                                    "Closets wont work."
+                                })
+                            end)
                         end
                     end
+                    break
                 end
             end
         end
     end)
     
     -- Camera shake thread
-    spawn(function()
+    local shakeThread = spawn(function()
         while entity ~= nil and entityPart ~= nil and entityPart.Parent ~= nil do 
-            wait(1)
+            wait(1.8)
             if camShake then
-                camShake:Shake(cameraShakerModule.Presets.Earthquake)
+                pcall(function()
+                    camShake:Shake(cameraShaker.Presets.Earthquake)
+                end)
             end
         end
     end)
@@ -284,8 +303,9 @@ local function DeerGod()
     -- Movement logic
     ambruhspeed = DEF_SPEED
     
-    local latestRoomValue = latestRoomInt.Value
     for i = 1, latestRoomValue + 1 do
+        if not entityPart or not entityPart.Parent then break end
+        
         local room = currentRooms:FindFirstChild(tostring(i))
         if room and room:FindFirstChild("Nodes") then
             local nodes = room.Nodes
@@ -295,13 +315,12 @@ local function DeerGod()
                 pcall(function() required.breakLights(room) end)
             end
             
-            -- Get all nodes and sort them by name or position
+            -- Get all nodes and sort them
             local nodeList = {}
             for _, node in ipairs(nodes:GetChildren()) do
                 table.insert(nodeList, node)
             end
             
-            -- Sort nodes numerically if possible
             table.sort(nodeList, function(a, b)
                 local numA = tonumber(a.Name) or 0
                 local numB = tonumber(b.Name) or 0
@@ -309,15 +328,14 @@ local function DeerGod()
             end)
             
             for _, node in ipairs(nodeList) do
-                if entityPart and entityPart.Parent then
-                    local dist = (entityPart.Position - node.Position).magnitude
-                    local jerk = game.TweenService:Create(entityPart, TweenInfo.new(GetTime(dist, ambruhspeed), Enum.EasingStyle.Linear, Enum.EasingDirection.Out, 0, false, 0), {CFrame = node.CFrame + ambruhheight})
-                    jerk:Play()
-                    jerk.Completed:Wait()
-                    ambruhspeed = storer
-                else
-                    break
-                end
+                if not entityPart or not entityPart.Parent then break end
+                
+                local dist = (entityPart.Position - node.Position).magnitude
+                local tweenService = game:GetService("TweenService")
+                local jerk = tweenService:Create(entityPart, TweenInfo.new(GetTime(dist, ambruhspeed), Enum.EasingStyle.Linear, Enum.EasingDirection.Out, 0, false, 0), {CFrame = node.CFrame + ambruhheight})
+                jerk:Play()
+                jerk.Completed:Wait()
+                ambruhspeed = storer
             end
         end
     end
@@ -331,7 +349,16 @@ local function DeerGod()
     end
     
     game:GetService("Debris"):AddItem(entity, 1.5)
+    currentEntity = nil
 end
 
--- Start the script
-spawn(DeerGod)
+-- Start the script (kill previous if running)
+if deerGodThread then
+    pcall(function()
+        if currentEntity then
+            currentEntity:Destroy()
+        end
+    end)
+end
+
+deerGodThread = spawn(DeerGod)
