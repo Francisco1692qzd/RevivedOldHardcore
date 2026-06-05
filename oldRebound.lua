@@ -251,7 +251,7 @@ local function Rebound()
             local room = currentRooms[i]
             if room and room:FindFirstChild("RoomStart") then
                 local abc = room:FindFirstChild("RoomEnd")
-                local jerk = game.TweenService:Create(entityPart, TweenInfo.new(speed, Enum.EasingStyle.Sine, Enum.EasingDirection.Out, 0,false,0), {CFrame = abc.CFrame})
+                local jerk = game.TweenService:Create(entityPart, TweenInfo.new(speed, Enum.EasingStyle.Sine, Enum.EasingDirection.Out, 0,false,0), {CFrame = abc.CFrame + Vector3.new(0,0.4,0)})
                 jerk:Play()
                 jerk.Completed:Wait()
             end
