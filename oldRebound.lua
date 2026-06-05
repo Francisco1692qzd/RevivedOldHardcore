@@ -41,7 +41,8 @@ G.LoadGithubModel = function(url)
     end)
     
     if success and result then 
-        return result 
+        -- AUTOMATICALLY CLONE so you get a fresh instance every time
+        return result:Clone()
     end
     
     -- If load fails, delete corrupted file
@@ -52,43 +53,86 @@ G.LoadGithubModel = function(url)
     return nil
 end
 
-local G = getgenv()
-
-G.LoadGithubAudio = function(url)
-    if not (writefile and getcustomasset and request) then return nil end
-
-    -- Bypass de Cache: Adiciona um número aleatório ao final para forçar o download limpo
-    local cleanUrl = url .. "?t=" .. math.random(1, 100000)
-
-    local response = request({
-        Url = cleanUrl,
-        Method = "GET",
-        Headers = {
-            ["Accept"] = "audio/mpeg, audio/ogg, application/octet-stream"
-        }
-    })
-
-    if response.StatusCode ~= 200 then
-        warn("Xeno: Falha no download. Status: " .. response.StatusCode)
-        return nil
+G.LoadGithubAudio = function(url, forceRefresh)
+    if not (writefile and getcustomasset and request and isfile) then 
+        warn("Missing required functions")
+        return nil 
     end
-
-    -- Nome único para evitar conflitos de escrita
-    local fileName = "rebound_fix_" .. tick() .. ".mp3"
     
-    -- Salva e força a leitura
-    writefile(fileName, response.Body)
+    forceRefresh = forceRefresh or false
     
+    -- Generate a consistent filename based on URL hash
+    local function getHash(str)
+        local hash = 0
+        for i = 1, #str do
+            hash = (hash * 31 + string.byte(str, i)) % 2^32
+        end
+        return tostring(hash)
+    end
+    
+    -- Detect audio format from URL
+    local function getAudioFormat(url)
+        if url:match("%.mp3$") then return "mp3"
+        elseif url:match("%.ogg$") then return "ogg"
+        elseif url:match("%.wav$") then return "wav"
+        else return "mp3"
+        end
+    end
+    
+    local audioFormat = getAudioFormat(url)
+    local fileName = "rebound_audio_" .. getHash(url) .. "." .. audioFormat
+    
+    -- Force refresh: delete existing file
+    if forceRefresh and isfile(fileName) and delfile then
+        pcall(function() delfile(fileName) end)
+        print("🔄 Force refresh: deleted cached audio")
+    end
+    
+    -- Check if file exists
+    local fileExists = isfile(fileName)
+    
+    -- Download if file doesn't exist or force refresh
+    if not fileExists then
+        print("📥 Downloading audio from: " .. url)
+        
+        local downloadUrl = url .. "?t=" .. math.random(1, 100000)
+        
+        local response = request({
+            Url = downloadUrl,
+            Method = "GET",
+            Headers = {
+                ["Accept"] = "audio/mpeg, audio/ogg, application/octet-stream"
+            }
+        })
+        
+        if response.StatusCode ~= 200 then
+            warn("Xeno: Failed to download audio. Status: " .. response.StatusCode)
+            return nil
+        end
+        
+        writefile(fileName, response.Body)
+        print("💾 Audio saved: " .. fileName)
+    else
+        print("📁 Using cached audio: " .. fileName)
+    end
+    
+    -- Get custom asset
     local success, assetId = pcall(function()
         return getcustomasset(fileName)
     end)
-
-    if success then
-        print("✅ Áudio Rebound carregado com sucesso!")
+    
+    if success and assetId then
+        print("✅ Audio loaded successfully!")
         return assetId
     end
     
-    warn("Erro no getcustomasset: " .. tostring(assetId))
+    warn("Error in getcustomasset: " .. tostring(assetId))
+    
+    -- Clean up corrupted file
+    pcall(function() 
+        if delfile then delfile(fileName) end
+    end)
+    
     return nil
 end
 
