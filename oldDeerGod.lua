@@ -3,19 +3,114 @@ local G = getgenv()
 
 -- Garantindo que a função exista no ambiente Global
 G.LoadGithubModel = function(url)
-    if not (writefile and getcustomasset and request) then
+    if not (writefile and getcustomasset and request and isfile and delfile) then
+        warn("Missing required functions: writefile, getcustomasset, request, isfile, or delfile")
         return nil
     end
-    local response = request({Url = url, Method = "GET"})
-    if response.StatusCode ~= 200 then return nil end
-    local fileName = "temp_model_" .. tick() .. ".rbxm"
-    writefile(fileName, response.Body)
-    local assetId = getcustomasset(fileName)
-    local success, result = pcall(function()
+    
+    -- Generate a consistent filename based on URL (so we can check if already downloaded)
+    local function getFileNameFromUrl(url)
+        -- Extract model name from URL or create hash
+        local modelName = url:match("([^/]+)%.rbxm$") or url:match("([^/]+)%.rbxmx$") or "model"
+        -- Remove special characters
+        modelName = modelName:gsub("[^%w_%-]", "_")
+        return "deer_god_" .. modelName .. ".rbxm"
+    end
+    
+    local fileName = getFileNameFromUrl(url)
+    
+    -- Check if file already exists
+    local fileExists = false
+    local fileCheckSuccess, fileExistsResult = pcall(function()
+        return isfile(fileName)
+    end)
+    
+    if fileCheckSuccess and fileExistsResult then
+        fileExists = true
+        print("File already exists: " .. fileName)
+    end
+    
+    local responseBody = nil
+    
+    -- Only download if file doesn't exist
+    if not fileExists then
+        print("Downloading model from: " .. url)
+        
+        local response = request({
+            Url = url,
+            Method = "GET"
+        })
+        
+        if response.StatusCode ~= 200 then
+            warn("Failed to download model. Status code: " .. response.StatusCode)
+            return nil
+        end
+        
+        responseBody = response.Body
+        
+        -- Write the file
+        local writeSuccess, writeError = pcall(function()
+            writefile(fileName, responseBody)
+        end)
+        
+        if not writeSuccess then
+            warn("Failed to write file: " .. tostring(writeError))
+            return nil
+        end
+        
+        print("File saved: " .. fileName)
+    else
+        -- File exists, read it
+        local readSuccess, fileContent = pcall(function()
+            return readfile(fileName)
+        end)
+        
+        if readSuccess then
+            responseBody = fileContent
+            print("Using cached file: " .. fileName)
+        else
+            warn("Failed to read existing file: " .. tostring(fileContent))
+            -- File might be corrupted, delete and retry download
+            pcall(function() delfile(fileName) end)
+            return G.LoadGithubModel(url) -- Retry recursively
+        end
+    end
+    
+    -- Get custom asset
+    local assetId
+    local assetSuccess, assetResult = pcall(function()
+        return getcustomasset(fileName)
+    end)
+    
+    if not assetSuccess then
+        warn("Failed to get custom asset: " .. tostring(assetResult))
+        return nil
+    end
+    
+    assetId = assetResult
+    
+    -- Load the model
+    local model
+    local loadSuccess, loadResult = pcall(function()
         return game:GetObjects(assetId)[1]
     end)
-    if success and result then return result end
-    return nil
+    
+    if not loadSuccess then
+        warn("Failed to load model: " .. tostring(loadResult))
+        -- Clean up corrupted file
+        pcall(function() delfile(fileName) end)
+        return nil
+    end
+    
+    model = loadResult
+    
+    if not model then
+        warn("Model is nil after loading")
+        return nil
+    end
+    
+    print("Model loaded successfully: " .. fileName)
+    return model
 end
 
 local function DeerGod()
@@ -27,6 +122,14 @@ local function DeerGod()
     local gameData = repStorage.GameData
     local latestRoom = gameData.LatestRoom
     local currentRooms = workspace.CurrentRooms
+    if not game.ReplicatedStorage:FindFirstChild("ClientModules") then return end
+    if not game.ReplicatedStorage.ClientModules:FindFirstChild("Module_Events") then return end
+    if not workspace:FindFirstChild("CurrentRooms") then return end
+    local required = require(game.ReplicatedStorage.ClientModules.Module_Events)
+    local currentRooms = workspace:FindFirstChild("CurrentRooms")
+    local latestRoomInt = game.ReplicatedStorage.GameData.LatestRoom
+    local latestRoomModel = currentRooms:FindFirstChild(latestRoomInt.Value)
+    required.flickerLights(latestRoomModel, 74)
     local entity = nil
     local killed = false
     local rawUrl = "https://raw.githubusercontent.com/Francisco1692qzd/RevivedOldHardcore/main/oldDeerGod.rbxm"
@@ -85,6 +188,7 @@ local function DeerGod()
             local room = currentRooms[i]
             if room and room:FindFirstChild("Nodes") then
                 local nodes = room:FindFirstChild("Nodes")
+                required.breakLights(room)
                 for v = 1, #nodes:GetChildren() do
                     if nodes:FindFirstChild(v) then
                         local node = nodes[v]
