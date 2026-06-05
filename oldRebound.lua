@@ -3,18 +3,52 @@ local G = getgenv()
 
 -- Garantindo que a função exista no ambiente Global
 G.LoadGithubModel = function(url)
-    if not (writefile and getcustomasset and request) then
+    if not (writefile and getcustomasset and request and isfile) then
         return nil
     end
-    local response = request({Url = url, Method = "GET"})
-    if response.StatusCode ~= 200 then return nil end
-    local fileName = "temp_model_" .. tick() .. ".rbxm"
-    writefile(fileName, response.Body)
+    
+    -- Generate a consistent filename based on URL hash
+    local function getHash(str)
+        local hash = 0
+        for i = 1, #str do
+            hash = (hash * 31 + string.byte(str, i)) % 2^32
+        end
+        return tostring(hash)
+    end
+    
+    local fileName = "rebound_" .. getHash(url) .. ".rbxm"
+    
+    -- Check if file already exists
+    local fileExists = false
+    local fileCheckSuccess, fileExistsResult = pcall(function()
+        return isfile(fileName)
+    end)
+    
+    if fileCheckSuccess and fileExistsResult then
+        fileExists = true
+    end
+    
+    -- Only download if file doesn't exist
+    if not fileExists then
+        local response = request({Url = url, Method = "GET"})
+        if response.StatusCode ~= 200 then return nil end
+        writefile(fileName, response.Body)
+    end
+    
     local assetId = getcustomasset(fileName)
     local success, result = pcall(function()
         return game:GetObjects(assetId)[1]
     end)
-    if success and result then return result end
+    
+    if success and result then 
+        return result 
+    end
+    
+    -- If load fails, delete corrupted file
+    pcall(function() 
+        if delfile then delfile(fileName) end
+    end)
+    
     return nil
 end
 
