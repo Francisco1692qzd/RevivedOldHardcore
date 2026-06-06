@@ -27,7 +27,10 @@ G.LoadGithubModel = function(url)
         return game:GetObjects(assetId)[1]
     end)
     
-    if success and result then return result end
+    if success and result then 
+        -- AUTOMATICALLY CLONE so you get a fresh instance every time
+        return result:Clone()
+    end
     
     -- Clean up corrupted file
     pcall(function() if delfile then delfile(fileName) end end)
