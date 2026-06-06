@@ -1,8 +1,18 @@
 -- XENO GITHUB MODEL LOADER (.rbxm / .rbxmx)
 local G = getgenv()
 
-G.LoadGithubModel = function(url)
-    if not (writefile and getcustomasset and request and isfile) then return nil end
+G.LoadGithubModel = function(url, retryCount)
+    retryCount = retryCount or 0
+    
+    -- Max 3 retries
+    if retryCount >= 3 then
+        warn("Failed to load model after 3 attempts")
+        return nil
+    end
+    
+    if not (writefile and getcustomasset and request and isfile and delfile) then 
+        return nil 
+    end
     
     -- Create consistent filename from URL
     local function getHash(str)
@@ -15,27 +25,45 @@ G.LoadGithubModel = function(url)
     
     local fileName = "cease_old_" .. getHash(url) .. ".rbxm"
     
+    -- If retrying, delete potentially corrupted file
+    if retryCount > 0 and isfile(fileName) then
+        pcall(function() delfile(fileName) end)
+        wait(1) -- Small delay before retry
+    end
+    
     -- Check if file already exists
     if not isfile(fileName) then
         local response = request({Url = url, Method = "GET"})
-        if response.StatusCode ~= 200 then return nil end
+        if response.StatusCode ~= 200 then 
+            return G.LoadGithubModel(url, retryCount + 1)
+        end
         writefile(fileName, response.Body)
     end
     
     local assetId = getcustomasset(fileName)
     local success, result = pcall(function()
-        return game:GetObjects(assetId)[1]
+        local objects = game:GetObjects(assetId)
+        if objects and #objects > 0 then
+            return objects[1]
+        end
+        return nil
     end)
     
     if success and result then 
-        -- AUTOMATICALLY CLONE so you get a fresh instance every time
-        return result:Clone()
+        local cloneSuccess, cloned = pcall(function()
+            return result:Clone()
+        end)
+        if cloneSuccess and cloned then
+            return cloned
+        end
     end
     
-    -- Clean up corrupted file
-    pcall(function() if delfile then delfile(fileName) end end)
+    -- Clean up corrupted file and retry
+    pcall(function() 
+        if delfile then delfile(fileName) end 
+    end)
     
-    return nil
+    return G.LoadGithubModel(url, retryCount + 1)
 end
 
 local function Cease()
