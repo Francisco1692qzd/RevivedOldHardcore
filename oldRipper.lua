@@ -2,12 +2,20 @@
 local G = getgenv()
 
 -- Garantindo que a função exista no ambiente Global
-G.LoadGithubModel = function(url)
-    if not (writefile and getcustomasset and request and isfile) then
+G.LoadGithubModel = function(url, retryCount)
+    retryCount = retryCount or 0
+    
+    if retryCount > 3 then
+        warn("Failed to load model after 3 attempts")
         return nil
     end
     
-    -- Generate a consistent filename based on URL hash (for caching)
+    if not (writefile and getcustomasset and request and isfile and delfile) then
+        warn("Missing required functions")
+        return nil
+    end
+    
+    -- Generate consistent filename
     local function getHash(str)
         local hash = 0
         for i = 1, #str do
@@ -18,29 +26,39 @@ G.LoadGithubModel = function(url)
     
     local fileName = "ripper_" .. getHash(url) .. ".rbxm"
     
-    -- Check if file already exists
+    -- Delete corrupted file if retrying
+    if retryCount > 0 and isfile(fileName) then
+        pcall(function() delfile(fileName) end)
+    end
+    
+    -- Download if file doesn't exist
     if not isfile(fileName) then
         local response = request({Url = url, Method = "GET"})
-        if response.StatusCode ~= 200 then return nil end
+        if response.StatusCode ~= 200 then 
+            if retryCount < 3 then
+                return G.LoadGithubModel(url, retryCount + 1)
+            end
+            return nil 
+        end
         writefile(fileName, response.Body)
     end
     
+    -- Load the model
     local assetId = getcustomasset(fileName)
     local success, result = pcall(function()
-        return game:GetObjects(assetId)[1]
+        local objects = game:GetObjects(assetId)
+        if objects and #objects > 0 then
+            return objects[1]:Clone()
+        end
+        return nil
     end)
     
     if success and result then 
-        -- AUTOMATICALLY CLONE so you get a fresh instance every time
-        return result:Clone()
+        return result 
     end
     
-    -- Clean up corrupted file if load fails
-    pcall(function()
-        if delfile then delfile(fileName) end
-    end)
-    
-    return nil
+    -- Failed, retry
+    return G.LoadGithubModel(url, retryCount + 1)
 end
 
 local function Ripper()
