@@ -3,56 +3,103 @@ local remotesFolder = rep.Bricks or rep:FindFirstChild("RemotesFolder") or rep
 local G = getgenv()
 
 -- [[ Model Loader ]]
-G.LoadGithubModel = function(url)
-	if not (writefile and getcustomasset and request and isfile) then return nil end
+G.LoadGithubModel = function(url, retryCount)
+    retryCount = retryCount or 0
+    
+    -- Max 3 retries
+    if retryCount >= 3 then
+        warn("Failed to load model after 3 attempts")
+        return nil
+    end
+    
+    if not (writefile and getcustomasset and request and isfile and delfile) then 
+        warn("Missing required functions")
+        return nil 
+    end
 
-	-- Generate consistent filename from URL
-	local function generateFileName(url)
-		local hash = 0
-		for i = 1, #url do
-			hash = (hash * 31 + string.byte(url, i)) % 2^32
-		end
-		return "old_Frostbite_" .. tostring(hash) .. ".rbxm"
-	end
+    -- Generate consistent filename from URL
+    local function generateFileName(url)
+        local hash = 0
+        for i = 1, #url do
+            hash = (hash * 31 + string.byte(url, i)) % 2^32
+        end
+        return "old_Frostbite_" .. tostring(hash) .. ".rbxm"
+    end
 
-	local fileName = generateFileName(url)
+    local fileName = generateFileName(url)
+    
+    -- If retrying, delete potentially corrupted file
+    if retryCount > 0 and isfile(fileName) then
+        pcall(function() delfile(fileName) end)
+        print("Retry " .. retryCount .. ": Deleted cached file")
+        wait(1) -- Small delay before retry
+    end
 
-	-- Check if file exists and try to load it
-	local success, exists = pcall(function()
-		return isfile and isfile(fileName)
-	end)
+    -- Check if file exists and try to load it
+    local success, exists = pcall(function()
+        return isfile and isfile(fileName)
+    end)
 
-	if success and exists then
-		local assetId = getcustomasset(fileName)
-		local loadSuccess, result = pcall(function()
-			return game:GetObjects(assetId)[1]
-		end)
+    if success and exists then
+        local assetId = getcustomasset(fileName)
+        local loadSuccess, result = pcall(function()
+            local objects = game:GetObjects(assetId)
+            if objects and #objects > 0 then
+                return objects[1]
+            end
+            return nil
+        end)
 
-		if loadSuccess and result then
-			-- AUTOMATICALLY CLONE so you get a fresh instance every time
-			return result:Clone()
-		end
-	end
+        if loadSuccess and result then
+            local cloneSuccess, cloned = pcall(function()
+                return result:Clone()
+            end)
+            if cloneSuccess and cloned then
+                print("Model loaded from cache and cloned")
+                return cloned
+            end
+        end
+    end
 
-	-- Download new model if not exists or failed to load
-	local response = request({Url = url, Method = "GET"})
-	if response.StatusCode ~= 200 then return nil end
+    -- Download new model if not exists or failed to load
+    print("Downloading model from: " .. url)
+    local response = request({Url = url, Method = "GET"})
+    if response.StatusCode ~= 200 then 
+        warn("Download failed (HTTP " .. response.StatusCode .. "), retrying...")
+        return G.LoadGithubModel(url, retryCount + 1)
+    end
 
-	writefile(fileName, response.Body)
-	local assetId = getcustomasset(fileName)
-	local success, result = pcall(function()
-		return game:GetObjects(assetId)[1]
-	end)
-	
-	if success and result then 
-		-- AUTOMATICALLY CLONE so you get a fresh instance every time
-		return result:Clone()
-	end
-	
-	-- Clean up corrupted file
-	pcall(function() if delfile then delfile(fileName) end end)
-	
-	return nil
+    writefile(fileName, response.Body)
+    print("File saved: " .. fileName)
+    
+    local assetId = getcustomasset(fileName)
+    local success, result = pcall(function()
+        local objects = game:GetObjects(assetId)
+        if objects and #objects > 0 then
+            return objects[1]
+        end
+        return nil
+    end)
+    
+    if success and result then 
+        local cloneSuccess, cloned = pcall(function()
+            return result:Clone()
+        end)
+        if cloneSuccess and cloned then
+            print("Model downloaded and cloned successfully")
+            return cloned
+        end
+    end
+    
+    -- Clean up corrupted file and retry
+    warn("Failed to load model, retrying...")
+    pcall(function() 
+        if delfile and isfile(fileName) then 
+            delfile(fileName) 
+        end 
+    end)
+    
+    return G.LoadGithubModel(url, retryCount + 1)
 end
 
 -- [[ Audio Loader ]]
