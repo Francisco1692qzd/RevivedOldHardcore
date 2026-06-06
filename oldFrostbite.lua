@@ -4,7 +4,7 @@ local G = getgenv()
 
 -- [[ Model Loader ]]
 G.LoadGithubModel = function(url)
-	if not (writefile and getcustomasset and request) then return nil end
+	if not (writefile and getcustomasset and request and isfile) then return nil end
 
 	-- Generate consistent filename from URL
 	local function generateFileName(url)
@@ -29,7 +29,8 @@ G.LoadGithubModel = function(url)
 		end)
 
 		if loadSuccess and result then
-			return result
+			-- AUTOMATICALLY CLONE so you get a fresh instance every time
+			return result:Clone()
 		end
 	end
 
@@ -42,7 +43,15 @@ G.LoadGithubModel = function(url)
 	local success, result = pcall(function()
 		return game:GetObjects(assetId)[1]
 	end)
-	if success and result then return result end
+	
+	if success and result then 
+		-- AUTOMATICALLY CLONE so you get a fresh instance every time
+		return result:Clone()
+	end
+	
+	-- Clean up corrupted file
+	pcall(function() if delfile then delfile(fileName) end end)
+	
 	return nil
 end
 
