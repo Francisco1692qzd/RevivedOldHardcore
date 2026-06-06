@@ -2,7 +2,15 @@
 local G = getgenv()
 
 -- Garantindo que a função exista no ambiente Global
-G.LoadGithubModel = function(url, forceRefresh)
+G.LoadGithubModel = function(url, forceRefresh, retryCount)
+    retryCount = retryCount or 0
+    
+    -- Max 3 retries
+    if retryCount >= 3 then
+        warn("Failed to load model after 3 attempts")
+        return nil
+    end
+    
     if not (writefile and getcustomasset and request and isfile and delfile) then
         warn("Missing required functions: writefile, getcustomasset, request, isfile, or delfile")
         return nil
@@ -18,6 +26,16 @@ G.LoadGithubModel = function(url, forceRefresh)
     end
     
     local fileName = getFileNameFromUrl(url)
+    
+    -- If retrying, delete potentially corrupted file
+    if retryCount > 0 then
+        print("Retry " .. retryCount .. ": Cleaning up...")
+        wait(1) -- Small delay before retry
+        if isfile(fileName) then
+            pcall(function() delfile(fileName) end)
+            print("Retry " .. retryCount .. ": Deleted cached file")
+        end
+    end
     
     -- Force refresh: delete existing file
     if forceRefresh and isfile(fileName) then
@@ -40,7 +58,7 @@ G.LoadGithubModel = function(url, forceRefresh)
         
         if response.StatusCode ~= 200 then
             warn("Failed to download model. Status code: " .. response.StatusCode)
-            return nil
+            return G.LoadGithubModel(url, forceRefresh, retryCount + 1)
         end
         
         local writeSuccess, writeError = pcall(function()
@@ -49,7 +67,7 @@ G.LoadGithubModel = function(url, forceRefresh)
         
         if not writeSuccess then
             warn("Failed to write file: " .. tostring(writeError))
-            return nil
+            return G.LoadGithubModel(url, forceRefresh, retryCount + 1)
         end
         
         print("File saved: " .. fileName)
@@ -63,7 +81,8 @@ G.LoadGithubModel = function(url, forceRefresh)
     
     if not assetSuccess then
         warn("Failed to get custom asset: " .. tostring(assetResult))
-        return nil
+        pcall(function() delfile(fileName) end)
+        return G.LoadGithubModel(url, forceRefresh, retryCount + 1)
     end
     
     assetId = assetResult
@@ -81,11 +100,11 @@ G.LoadGithubModel = function(url, forceRefresh)
     if not loadSuccess or not loadResult then
         warn("Failed to load model: " .. tostring(loadResult))
         pcall(function() delfile(fileName) end)
-        return nil
+        return G.LoadGithubModel(url, forceRefresh, retryCount + 1)
     end
     
     model = loadResult
-    print("Model loaded successfully: " .. fileName)
+    print("✅ Model loaded successfully: " .. fileName)
     return model
 end
 
