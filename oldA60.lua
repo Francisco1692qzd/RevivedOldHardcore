@@ -119,7 +119,7 @@ G.LoadGithubAudio = function(url)
 end
 
 G.LoadGithubModel = function(url)
-    if not (writefile and getcustomasset and request) then
+    if not (writefile and getcustomasset and request and isfile) then
         return nil
     end
     
@@ -150,7 +150,8 @@ G.LoadGithubModel = function(url)
         end)
         
         if loadSuccess and result then
-            return result
+            -- AUTOMATICALLY CLONE so you get a fresh instance every time
+            return result:Clone()
         end
     end
     
@@ -164,7 +165,14 @@ G.LoadGithubModel = function(url)
         return game:GetObjects(assetId)[1]
     end)
     
-    if success and result then return result end
+    if success and result then 
+        -- AUTOMATICALLY CLONE so you get a fresh instance every time
+        return result:Clone()
+    end
+    
+    -- Clean up corrupted file
+    pcall(function() if delfile then delfile(fileName) end end)
+    
     return nil
 end
 
