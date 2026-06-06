@@ -2,8 +2,18 @@
 local G = getgenv()
 
 -- Garantindo que a função exista no ambiente Global
-G.LoadGithubModel = function(url)
-    if not (writefile and getcustomasset and request and isfile) then
+G.LoadGithubModel = function(url, retryCount, retryDelay)
+    retryCount = retryCount or 0
+    retryDelay = retryDelay or 1 -- 1 second delay between retries
+    
+    -- Max 3 retries
+    if retryCount >= 3 then
+        warn("Failed to load model after 3 attempts")
+        return nil
+    end
+    
+    if not (writefile and getcustomasset and request and isfile and delfile) then
+        warn("Missing required functions: writefile, getcustomasset, request, isfile, delfile")
         return nil
     end
     
@@ -18,6 +28,17 @@ G.LoadGithubModel = function(url)
     
     local fileName = "rebound_" .. getHash(url) .. ".rbxm"
     
+    -- If retrying, delete the potentially corrupted file
+    if retryCount > 0 then
+        print("Retry " .. retryCount .. ": Cleaning up...")
+        pcall(function() 
+            if isfile(fileName) then
+                delfile(fileName)
+            end
+        end)
+        wait(retryDelay) -- Wait before retrying
+    end
+    
     -- Check if file already exists
     local fileExists = false
     local fileCheckSuccess, fileExistsResult = pcall(function()
@@ -30,29 +51,50 @@ G.LoadGithubModel = function(url)
     
     -- Only download if file doesn't exist
     if not fileExists then
+        print("Downloading model from: " .. url)
         local response = request({Url = url, Method = "GET"})
-        if response.StatusCode ~= 200 then return nil end
+        if response.StatusCode ~= 200 then 
+            warn("Download failed (HTTP " .. response.StatusCode .. "), retrying...")
+            return G.LoadGithubModel(url, retryCount + 1, retryDelay)
+        end
         writefile(fileName, response.Body)
+        print("File saved: " .. fileName)
     end
     
+    -- Load the model
     local assetId = getcustomasset(fileName)
     local success, result = pcall(function()
-        return game:GetObjects(assetId)[1]
+        local objects = game:GetObjects(assetId)
+        if objects and #objects > 0 then
+            return objects[1]
+        end
+        return nil
     end)
     
     if success and result then 
-        -- AUTOMATICALLY CLONE so you get a fresh instance every time
-        return result:Clone()
+        -- Clone and return fresh instance
+        local cloneSuccess, cloned = pcall(function()
+            return result:Clone()
+        end)
+        
+        if cloneSuccess and cloned then
+            print("Model loaded and cloned successfully")
+            return cloned
+        else
+            warn("Clone failed: " .. tostring(cloned))
+        end
     end
     
-    -- If load fails, delete corrupted file
+    -- If load fails, delete corrupted file and retry
+    warn("Failed to load model: " .. tostring(result))
     pcall(function() 
-        if delfile then delfile(fileName) end
+        if delfile and isfile(fileName) then
+            delfile(fileName)
+        end
     end)
     
-    return nil
+    return G.LoadGithubModel(url, retryCount + 1, retryDelay)
 end
-
 G.LoadGithubAudio = function(url, forceRefresh)
     if not (writefile and getcustomasset and request and isfile) then 
         warn("Missing required functions")
